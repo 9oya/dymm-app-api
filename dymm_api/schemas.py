@@ -124,3 +124,25 @@ create_log_schema = {
                  "y_val", "log_date"],
     "additionalProperties": False
 }
+create_cond_log_schema = {
+    "type": "object",
+    "properties": {
+        "avatar_id": {
+            "type": "integer"
+        },
+        "tag_id": {
+            "type": "integer"
+        },
+        "cond_log_type": {
+            "type": "integer"
+        },
+        "log_date": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 10,
+            "pattern": "^\d{4}\-\d{1,2}\-\d{1,2}$"
+        }
+    },
+    "required": ["avatar_id", "tag_id", "cond_log_type", "log_date"],
+    "additionalProperties": False
+}

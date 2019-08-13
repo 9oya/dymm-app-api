@@ -42,6 +42,11 @@ class RegExPatter:
     week_of_year = '[1-54]'
 
 
+class CondLogType:
+    start_date = 1
+    end_date = 2
+
+
 class TagType:
     activity = 7
     condition = 8

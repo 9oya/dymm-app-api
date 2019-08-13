@@ -8,7 +8,8 @@ from dymm_api import b_crypt
 from errors import ok, forbidden, bad_req, unauthorized
 from patterns import MsgPattern, RegExPatter, ErrorPattern, TagType
 from schemas import (validate_schema, update_avatar_schema, create_log_schema,
-                     auth_avatar_schema, create_avatar_schema)
+                     auth_avatar_schema, create_avatar_schema,
+                     create_cond_log_schema)
 from mail import confirm_mail_token, send_mail
 from helpers import Helpers, str_to_bool
 
@@ -218,6 +219,17 @@ def post_new_log():
         return bad_req(result['message'])
     data = result['data']
     _h.create_log(data)
+    return ok()
+
+
+@api.route('/log/cond', methods=['POST'])
+@jwt_required
+def post_cond_log():
+    result = validate_schema(request.get_json(), create_cond_log_schema)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    _h.create_cond_log(data)
     return ok()
 
 

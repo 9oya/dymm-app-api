@@ -4,7 +4,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 
 from dymm_api import b_crypt
 from database import db_session
-from patterns import URIPattern, TagType, AvatarInfo
+from patterns import URIPattern, TagType, AvatarInfo, CondLogType
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                     ProfileTag, Tag, TagLog, TagSet)
 
@@ -390,6 +390,41 @@ class Helpers(object):
         )
         db_session.add(new_tag_log)
         db_session.commit()
+
+    @staticmethod
+    def create_cond_log(data):
+        tag = Helpers.get_a_tag(data['tag_id'])
+        avatar_cond = AvatarCond.query.filter(
+            AvatarCond.avatar_id == data['avatar_id'],
+            AvatarCond.cond_id == tag.id,
+            AvatarCond.is_active == True
+        ).first()
+        if avatar_cond:
+            if data['cond_log_type'] == CondLogType.start_date:
+                avatar_cond.start_date = data['log_date']
+            else:
+                avatar_cond.end_date = data['log_date']
+            avatar_cond.modified_timestamp = datetime.datetime.now(tz=pytz.utc)
+            db_session.commit()
+            return True
+        else:
+            if data['cond_log_type'] == CondLogType.start_date:
+                avatar_cond = AvatarCond(
+                    avatar_id=data['avatar_id'],
+                    cond_id=tag.id,
+                    is_active=True,
+                    start_date=data['log_date']
+                )
+            else:
+                avatar_cond = AvatarCond(
+                    avatar_id=data['avatar_id'],
+                    cond_id=tag.id,
+                    is_active=True,
+                    end_date=data['log_date']
+                )
+            db_session.add(avatar_cond)
+            db_session.commit()
+            return True
 
     @staticmethod
     def create_profile_tag(avatar_id, tag_id, is_selected, score):
