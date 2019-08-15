@@ -1,6 +1,7 @@
 import random, datetime, pytz
 
 from flask_jwt_extended import create_access_token, create_refresh_token
+from sqlalchemy import text
 
 from dymm_api import b_crypt
 from database import db_session
@@ -55,10 +56,10 @@ class Helpers(object):
     # Converters
     # -------------------------------------------------------------------------
     @staticmethod
-    def convert_banners_into_json(banners: [Banner]) -> [dict]:
-        _jsons = list()
+    def convert_banners_into_js(banners: [Banner]) -> [dict]:
+        _js_list = list()
         for banner in banners:
-            _json = dict(
+            _js = dict(
                 id=banner.id,
                 img_name=banner.img_name,
                 bg_color=banner.bg_color,
@@ -70,12 +71,12 @@ class Helpers(object):
                 kor_subtitle=banner.kor_subtitle,
                 jpn_subtitle=banner.jpn_subtitle
             )
-            _jsons.append(_json)
-        return _jsons
+            _js_list.append(_js)
+        return _js_list
 
     @staticmethod
-    def convert_a_avatar_into_json(avatar: Avatar) -> dict:
-        _json = dict(
+    def convert_a_avatar_into_js(avatar: Avatar) -> dict:
+        _js = dict(
             id=avatar.id,
             is_blocked=avatar.is_blocked,
             is_confirmed=avatar.is_confirmed,
@@ -92,13 +93,38 @@ class Helpers(object):
                 identity=dict(email=avatar.email)
             )
         )
-        return _json
+        return _js
+    
+    @staticmethod
+    def convert_avt_cond_list_into_js(avt_cond_list: [AvatarCond]) -> [dict]:
+        _js_list = list()
+        for avt_cond in avt_cond_list:
+            try:
+                start_date = avt_cond.start_date.strftime('%b/%d/%Y')
+            except AttributeError:
+                start_date = None
+            try:
+                end_date = avt_cond.end_date.strftime('%b/%d/%Y')
+            except AttributeError:
+                end_date = None
+            _js = dict(
+                id=avt_cond.id,
+                avatar_id=avt_cond.avatar_id,
+                tag_id=avt_cond.cond_id,
+                start_date=start_date,
+                end_date=end_date,
+                eng_name=avt_cond.cond.eng_name,
+                kor_name=avt_cond.cond.kor_name,
+                jpn_name=avt_cond.cond.jpn_name
+            )
+            _js_list.append(_js)
+        return _js_list
 
     @staticmethod
-    def convert_log_groups_into_json(log_groups: [LogGroup]) -> list:
-        _jsons = list()
+    def convert_log_groups_into_js(log_groups: [LogGroup]) -> list:
+        _js_list = list()
         for log_group in log_groups:
-            _json = dict(
+            _js = dict(
                 id=log_group.id,
                 year_number=log_group.year_number,
                 month_number=log_group.month_number,
@@ -112,14 +138,14 @@ class Helpers(object):
                 has_cond_score=log_group.has_cond_score,
                 cond_score=log_group.cond_score
             )
-            _jsons.append(_json)
-        return _jsons
+            _js_list.append(_js)
+        return _js_list
 
     @staticmethod
-    def convert_tag_logs_into_json(tag_logs: [TagLog]) -> list:
-        _jsons = list()
+    def convert_tag_logs_into_js(tag_logs: [TagLog]) -> list:
+        _js_list = list()
         for tag_log in tag_logs:
-            _json = dict(
+            _js = dict(
                 id=tag_log.id,
                 group_id=tag_log.group_id,
                 tag_id=tag_log.tag_id,
@@ -129,37 +155,37 @@ class Helpers(object):
                 kor_name=tag_log.tag.kor_name,
                 jpn_name=tag_log.tag.jpn_name
             )
-            _jsons.append(_json)
-        return _jsons
+            _js_list.append(_js)
+        return _js_list
 
     @staticmethod
-    def convert_a_tag_into_json(tag: Tag):
-        _json = dict(id=tag.id,
+    def convert_a_tag_into_js(tag: Tag):
+        _js = dict(id=tag.id,
                      tag_type=tag.tag_type,
                      eng_name=tag.eng_name,
                      kor_name=tag.kor_name,
                      jpn_name=tag.jpn_name)
-        return _json
+        return _js
 
     @staticmethod
-    def convert_tag_sets_into_json(tag_sets):
-        _jsons = list()
+    def convert_tag_sets_into_js(tag_sets):
+        _js_list = list()
         for tag_set in tag_sets:
-            _json = dict(id=tag_set.sub.id,
+            _js = dict(id=tag_set.sub.id,
                          tag_type=tag_set.sub.tag_type,
                          eng_name=tag_set.sub.eng_name,
                          kor_name=tag_set.sub.kor_name,
                          jpn_name=tag_set.sub.jpn_name)
-            _jsons.append(_json)
-        return _jsons
+            _js_list.append(_js)
+        return _js_list
 
     @staticmethod
-    def convert_tag_sets_into_json_add_idx(tag_sets, matching_id):
-        _jsons = list()
+    def convert_tag_sets_into_js_add_idx(tag_sets, matching_id):
+        _js_list = list()
         _idx = 0
         _matching_idx = 0
         for tag_set in tag_sets:
-            _json = dict(
+            _js = dict(
                 id=tag_set.sub.id,
                 idx=_idx,
                 eng_name=tag_set.sub.eng_name,
@@ -169,14 +195,14 @@ class Helpers(object):
             if tag_set.sub.id == int(matching_id):
                 _matching_idx = _idx
             _idx += 1
-            _jsons.append(_json)
-        return _jsons, _matching_idx
+            _js_list.append(_js)
+        return _js_list, _matching_idx
 
     @staticmethod
-    def convert_profile_tag_into_json(profile_tags: [ProfileTag]):
-        _jsons = list()
+    def convert_profile_tag_into_js(profile_tags: [ProfileTag]):
+        _js_list = list()
         for profile_tag in profile_tags:
-            _json = dict(
+            _js = dict(
                 id=profile_tag.id,
                 tag_id=profile_tag.tag_id,
                 is_selected=profile_tag.is_selected,
@@ -184,8 +210,8 @@ class Helpers(object):
                 kor_name=profile_tag.tag.kor_name,
                 jpn_name=profile_tag.tag.jpn_name
             )
-            _jsons.append(_json)
-        return _jsons
+            _js_list.append(_js)
+        return _js_list
 
     # GET methods
     # -------------------------------------------------------------------------
@@ -223,6 +249,17 @@ class Helpers(object):
             Avatar.is_active == True
         ).first()
         return avatar
+
+    @staticmethod
+    def get_avt_cond_list(avatar_id):
+        avt_cond_list = AvatarCond.query.filter(
+            AvatarCond.avatar_id == avatar_id,
+            AvatarCond.is_active == True
+        ).order_by(
+            AvatarCond.end_date.desc(),
+            AvatarCond.start_date.desc()
+        ).all()
+        return avt_cond_list
 
     @staticmethod
     def get_a_log_group(group_id) -> LogGroup:
@@ -404,7 +441,7 @@ class Helpers(object):
                 avatar_cond.start_date = data['log_date']
             else:
                 avatar_cond.end_date = data['log_date']
-            avatar_cond.modified_timestamp = datetime.datetime.now(tz=pytz.utc)
+            avatar_cond.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
         else:
@@ -465,7 +502,7 @@ class Helpers(object):
             Avatar.id == avatar_id,
             Avatar.is_active == True
         ).update({"is_confirmed": True,
-                  "modified_timestamp": datetime.datetime.now(tz=pytz.utc)},
+                  "modified_timestamp": text("timezone('utc'::text, now())")},
                  synchronize_session=False)
         db_session.commit()
         return True
@@ -478,6 +515,7 @@ class Helpers(object):
                 Avatar.is_active == True
             ).first()
             avatar.first_name = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
         elif target == AvatarInfo.last_name:
@@ -486,6 +524,7 @@ class Helpers(object):
                 Avatar.is_active == True
             ).first()
             avatar.last_name = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
         elif target == AvatarInfo.intro:
@@ -494,6 +533,7 @@ class Helpers(object):
                 Avatar.is_active == True
             ).first()
             avatar.introduction = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
         else:
@@ -503,4 +543,5 @@ class Helpers(object):
     def update_profile_tag(profile_tag: ProfileTag, tag_id, is_selected):
         profile_tag.tag_id = tag_id
         profile_tag.is_selected = is_selected
+        profile_tag.modified_timestamp = text("timezone('utc'::text, now())")
         db_session.commit()

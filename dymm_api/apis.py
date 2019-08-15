@@ -63,8 +63,8 @@ def send_mail_confirm_link_again(avatar_id=None, email=None):
 @api.route('/banner', methods=['GET'])
 def fetch_banners():
     banners = _h.get_banners()
-    banners_json = _h.convert_banners_into_json(banners)
-    return ok(data=banners_json)
+    banners_js = _h.convert_banners_into_js(banners)
+    return ok(data=banners_js)
 
 
 @api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])
@@ -73,9 +73,9 @@ def fetch_tag_sets(tag_id=None, sort_type=None):
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
     tag_sets = _h.get_tag_sets(tag_id, sort_type)
-    tag_json = _h.convert_a_tag_into_json(tag)
-    tag_sets_json = _h.convert_tag_sets_into_json(tag_sets)
-    return ok(dict(tag=tag_json, sub_tags=tag_sets_json))
+    tag_js = _h.convert_a_tag_into_js(tag)
+    tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
+    return ok(dict(tag=tag_js, sub_tags=tag_sets_js))
 
 
 @api.route('/tag/<int:tag_id>/set/match/<is_selected>', methods=['GET'])
@@ -85,14 +85,14 @@ def fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
         return bad_req(_m.EMPTY_PARAM.format('fact_id'))
     if not str_to_bool(is_selected):
         tag_sets = _h.get_tag_sets(tag_id, 'score')
-        tags_json, matching_idx = _h.convert_tag_sets_into_json_add_idx(
+        tags_js, matching_idx = _h.convert_tag_sets_into_js_add_idx(
             tag_sets, tag_id)
-        return ok(dict(sub_tags=tags_json, select_idx=matching_idx))
+        return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
     super_tag = _h.get_a_super_tag(tag_id)
     tag_sets = _h.get_tag_sets(super_tag.id, 'score')
-    tags_json, matching_idx = _h.convert_tag_sets_into_json_add_idx(
+    tags_js, matching_idx = _h.convert_tag_sets_into_js_add_idx(
         tag_sets, tag_id)
-    return ok(dict(sub_tags=tags_json, select_idx=matching_idx))
+    return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
 
 
 @api.route('/avatar/<int:avatar_id>/profile', methods=['GET'])
@@ -103,11 +103,11 @@ def fetch_avatar_profile(avatar_id=None):
     avatar = _h.get_a_avatar(avatar_id)
     if not avatar.is_confirmed:
         return unauthorized(pattern=_e.MAIL_NEED_CONF, message=avatar.email)
-    avatar_json = _h.convert_a_avatar_into_json(avatar)
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
     profile_tags = _h.get_profile_tags(avatar_id)
-    profile_tag_jsons = _h.convert_profile_tag_into_json(profile_tags)
-    profile = dict(avatar=avatar_json,
-                   profile_tags=profile_tag_jsons)
+    profile_tag_jss = _h.convert_profile_tag_into_js(profile_tags)
+    profile = dict(avatar=avatar_js,
+                   profile_tags=profile_tag_jss)
     return ok(profile)
 
 
@@ -117,8 +117,18 @@ def fetch_a_avatar(avatar_id=None):
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
-    avatar_json = _h.convert_a_avatar_into_json(avatar)
-    return ok(avatar_json)
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    return ok(avatar_js)
+
+
+@api.route('/avatar/<int:avatar_id>/cond', methods=['GET'])
+@jwt_required
+def fetch_avatar_cond_list(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avt_cond_list = _h.get_avt_cond_list(avatar_id)
+    avt_cond_list_js = _h.convert_avt_cond_list_into_js(avt_cond_list)
+    return ok(avt_cond_list_js)
 
 
 @api.route('/log/group/<int:avatar_id>/<int:year_number>/<int:month_number>/'
@@ -143,8 +153,8 @@ def fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
             return bad_req(_m.BAD_PARAM.format('week_of_year'))
     log_groups = _h.get_log_groups(avatar_id, year_number, month_number,
                                    week_of_year)
-    log_groups_json = _h.convert_log_groups_into_json(log_groups)
-    return ok(log_groups_json)
+    log_groups_js = _h.convert_log_groups_into_js(log_groups)
+    return ok(log_groups_js)
 
 
 @api.route('/log/group/<int:group_id>/tag-log', methods=['GET'])
@@ -153,19 +163,19 @@ def fetch_group_of_logs(group_id=None):
     if not group_id:
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
-    logs_json = dict(group_id=log_group.id)
+    logs_js = dict(group_id=log_group.id)
     if log_group.has_food:
         food_logs = _h.get_tag_logs(log_group.id, TagType.food)
-        logs_json['food_logs'] = _h.convert_tag_logs_into_json(food_logs)
+        logs_js['food_logs'] = _h.convert_tag_logs_into_js(food_logs)
     if log_group.has_act:
         act_logs = _h.get_tag_logs(log_group.id, TagType.activity)
-        logs_json['act_logs'] = _h.convert_tag_logs_into_json(act_logs)
+        logs_js['act_logs'] = _h.convert_tag_logs_into_js(act_logs)
     if log_group.has_drug:
         drug_logs = _h.get_tag_logs(log_group.id, TagType.drug)
-        logs_json['drug_logs'] = _h.convert_tag_logs_into_json(drug_logs)
+        logs_js['drug_logs'] = _h.convert_tag_logs_into_js(drug_logs)
     if log_group.has_cond_score:
-        logs_json['cond_score'] = log_group.cond_score
-    return ok(logs_json)
+        logs_js['cond_score'] = log_group.cond_score
+    return ok(logs_js)
 
 
 # POST services
@@ -181,9 +191,9 @@ def auth_existed_avatar():
         return unauthorized(_e.MAIL_INVALID)
     if not b_crypt.check_password_hash(avatar.password_hash, data['password']):
         return unauthorized(_e.PASS_INVALID)
-    avatar_json = _h.convert_a_avatar_into_json(avatar)
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
     profile_tags = _h.get_profile_tags(avatar.id)
-    auth = dict(avatar=avatar_json, language_id=profile_tags[0].tag_id)
+    auth = dict(avatar=avatar_js, language_id=profile_tags[0].tag_id)
     return ok(auth)
 
 
@@ -197,8 +207,8 @@ def create_new_avatar():
         return unauthorized(_e.MAIL_DUP)
     avatar = _h.create_a_new_avatar(data)
     _h.create_def_profile_tags(avatar.id, data['language_id'])
-    avatar_json = _h.convert_a_avatar_into_json(avatar)
-    auth = dict(avatar=avatar_json, language_id=data['language_id'])
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
     send_mail(avatar.email)
     return ok(auth)
 
