@@ -146,3 +146,13 @@ create_cond_log_schema = {
     "required": ["avatar_id", "tag_id", "cond_log_type", "log_date"],
     "additionalProperties": False
 }
+update_cond_score_schema = {
+    "type": "object",
+    "properties": {
+        "cond_score": {
+            "type": "integer"
+        }
+    },
+    "required": ["cond_score"],
+    "additionalProperties": False
+}

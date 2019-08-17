@@ -545,3 +545,11 @@ class Helpers(object):
         profile_tag.is_selected = is_selected
         profile_tag.modified_timestamp = text("timezone('utc'::text, now())")
         db_session.commit()
+        return True
+
+    @staticmethod
+    def update_log_group_cond_score(log_group: LogGroup, data):
+        log_group.cond_score = data['cond_score']
+        log_group.has_cond_score = True
+        db_session.commit()
+        return True

@@ -9,7 +9,7 @@ from errors import ok, forbidden, bad_req, unauthorized
 from patterns import MsgPattern, RegExPatter, ErrorPattern, TagType
 from schemas import (validate_schema, update_avatar_schema, create_log_schema,
                      auth_avatar_schema, create_avatar_schema,
-                     create_cond_log_schema)
+                     create_cond_log_schema, update_cond_score_schema)
 from mail import confirm_mail_token, send_mail
 from helpers import Helpers, str_to_bool
 
@@ -269,4 +269,18 @@ def put_a_profile_tag(profile_tag_id=None, tag_id=None):
         is_selected = False
     profile_tag = _h.get_a_profile_tag(profile_tag_id)
     _h.update_profile_tag(profile_tag, tag_id, is_selected)
+    return ok()
+
+
+@api.route('/log/group/<int:group_id>/cond-score', methods=['PUT'])
+@jwt_required
+def put_cond_score(group_id=None):
+    result = validate_schema(request.get_json(), update_cond_score_schema)
+    if not result['ok']:
+        return bad_req(result['message'])
+    if group_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('group_id'))
+    log_group = _h.get_a_log_group(group_id)
+    data = result['data']
+    _h.update_log_group_cond_score(log_group, data)
     return ok()
