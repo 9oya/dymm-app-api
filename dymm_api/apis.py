@@ -84,12 +84,12 @@ def fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('fact_id'))
     if not str_to_bool(is_selected):
-        tag_sets = _h.get_tag_sets(tag_id, 'score')
+        tag_sets = _h.get_tag_sets(tag_id, 'priority')
         tags_js, matching_idx = _h.convert_tag_sets_into_js_add_idx(
             tag_sets, tag_id)
         return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
     super_tag = _h.get_a_super_tag(tag_id)
-    tag_sets = _h.get_tag_sets(super_tag.id, 'score')
+    tag_sets = _h.get_tag_sets(super_tag.id, 'priority')
     tags_js, matching_idx = _h.convert_tag_sets_into_js_add_idx(
         tag_sets, tag_id)
     return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
@@ -164,13 +164,13 @@ def fetch_group_of_logs(group_id=None):
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
     logs_js = dict(group_id=log_group.id)
-    if log_group.has_food:
+    if log_group.food_cnt > 0:
         food_logs = _h.get_tag_logs(log_group.id, TagType.food)
         logs_js['food_logs'] = _h.convert_tag_logs_into_js(food_logs)
-    if log_group.has_act:
+    if log_group.act_cnt > 0:
         act_logs = _h.get_tag_logs(log_group.id, TagType.activity)
         logs_js['act_logs'] = _h.convert_tag_logs_into_js(act_logs)
-    if log_group.has_drug:
+    if log_group.drug_cnt > 0:
         drug_logs = _h.get_tag_logs(log_group.id, TagType.drug)
         logs_js['drug_logs'] = _h.convert_tag_logs_into_js(drug_logs)
     if log_group.has_cond_score:
@@ -245,7 +245,7 @@ def post_cond_log():
 
 # PUT services
 # -----------------------------------------------------------------------------
-@api.route('', methods=['PUT'])
+@api.route('/avatar', methods=['PUT'])
 @jwt_required
 def put_avatar_info():
     result = validate_schema(request.get_json(), update_avatar_schema)
@@ -272,18 +272,24 @@ def put_a_profile_tag(profile_tag_id=None, tag_id=None):
     return ok()
 
 
-@api.route('/log/group/<int:group_id>/cond-score', methods=['PUT'])
+@api.route('/log/group/<int:group_id>/<option>', methods=['PUT'])
 @jwt_required
-def put_cond_score(group_id=None):
-    result = validate_schema(request.get_json(), update_cond_score_schema)
-    if not result['ok']:
-        return bad_req(result['message'])
+def put_cond_score(group_id=None, option=None):
     if group_id is None:
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
-    data = result['data']
-    _h.update_log_group_cond_score(log_group, data)
-    return ok()
+    if option == 'cond-score':
+        result = validate_schema(request.get_json(), update_cond_score_schema)
+        if not result['ok']:
+            return bad_req(result['message'])
+        data = result['data']
+        _h.update_log_group_cond_score(log_group, data)
+        return ok()
+    elif option == 'remove':
+        _h.update_log_group_is_active(log_group)
+        return ok()
+    else:
+        return bad_req(_m.BAD_PARAM)
 
 
 @api.route('/log/<int:tag_log_id>', methods=['PUT'])
@@ -293,4 +299,6 @@ def put_a_group_of_log(tag_log_id=None):
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     tag_log = _h.get_a_tag_log(tag_log_id)
     _h.update_tag_log(tag_log)
+    log_group = _h.get_a_log_group(tag_log.group_id)
+    _h.update_log_group_log_cnt(log_group, tag_log.tag.tag_type)
     return ok()

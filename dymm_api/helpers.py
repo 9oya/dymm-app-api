@@ -94,7 +94,7 @@ class Helpers(object):
             )
         )
         return _js
-    
+
     @staticmethod
     def convert_avt_cond_list_into_js(avt_cond_list: [AvatarCond]) -> [dict]:
         _js_list = list()
@@ -132,9 +132,9 @@ class Helpers(object):
                 day_of_year=log_group.day_of_year,
                 group_type=log_group.group_type,
                 day_number=log_group.log_date.day,
-                has_act=log_group.has_act,
-                has_drug=log_group.has_drug,
-                has_food=log_group.has_food,
+                food_cnt=log_group.food_cnt,
+                act_cnt=log_group.act_cnt,
+                drug_cnt=log_group.drug_cnt,
                 has_cond_score=log_group.has_cond_score,
                 cond_score=log_group.cond_score
             )
@@ -161,10 +161,10 @@ class Helpers(object):
     @staticmethod
     def convert_a_tag_into_js(tag: Tag):
         _js = dict(id=tag.id,
-                     tag_type=tag.tag_type,
-                     eng_name=tag.eng_name,
-                     kor_name=tag.kor_name,
-                     jpn_name=tag.jpn_name)
+                   tag_type=tag.tag_type,
+                   eng_name=tag.eng_name,
+                   kor_name=tag.kor_name,
+                   jpn_name=tag.jpn_name)
         return _js
 
     @staticmethod
@@ -172,10 +172,10 @@ class Helpers(object):
         _js_list = list()
         for tag_set in tag_sets:
             _js = dict(id=tag_set.sub.id,
-                         tag_type=tag_set.sub.tag_type,
-                         eng_name=tag_set.sub.eng_name,
-                         kor_name=tag_set.sub.kor_name,
-                         jpn_name=tag_set.sub.jpn_name)
+                       tag_type=tag_set.sub.tag_type,
+                       eng_name=tag_set.sub.eng_name,
+                       kor_name=tag_set.sub.kor_name,
+                       jpn_name=tag_set.sub.jpn_name)
             _js_list.append(_js)
         return _js_list
 
@@ -219,7 +219,7 @@ class Helpers(object):
     def get_banners():
         banners = Banner.query.filter(
             Banner.is_active == True
-        ).order_by(Banner.score).all()
+        ).order_by(Banner.priority).all()
         return banners
 
     @staticmethod
@@ -276,7 +276,8 @@ class Helpers(object):
             log_groups = LogGroup.query.filter(
                 LogGroup.avatar_id == avatar_id,
                 LogGroup.year_number == year_number,
-                LogGroup.month_number == month_number
+                LogGroup.month_number == month_number,
+                LogGroup.is_active == True
             ).order_by(
                 LogGroup.day_of_year.desc(),
                 LogGroup.group_type.desc()
@@ -285,7 +286,8 @@ class Helpers(object):
         log_groups = LogGroup.query.filter(
             LogGroup.avatar_id == avatar_id,
             LogGroup.year_number == year_number,
-            LogGroup.week_of_year == week_of_year
+            LogGroup.week_of_year == week_of_year,
+            LogGroup.is_active == True
         ).order_by(
             LogGroup.day_of_year.desc(),
             LogGroup.group_type.desc()
@@ -322,11 +324,11 @@ class Helpers(object):
                 TagSet.super_id == super_id,
                 TagSet.is_active == True
             ).order_by(Tag.jpn_name).all()
-        elif sort_type == 'score':
+        elif sort_type == 'priority':
             tag_sets = db_session.query(TagSet).filter(
                 TagSet.super_id == super_id,
                 TagSet.is_active == True
-            ).order_by(TagSet.score.desc()).all()
+            ).order_by(TagSet.priority.desc()).all()
         else:
             return False
         return tag_sets
@@ -344,9 +346,9 @@ class Helpers(object):
         profile_tags = ProfileTag.query.filter(
             ProfileTag.avatar_id == avatar_id,
             ProfileTag.is_active == True
-        ).order_by(ProfileTag.score.desc()).all()
+        ).order_by(ProfileTag.priority.desc()).all()
         return profile_tags
-    
+
     @staticmethod
     def get_a_tag_log(tag_log_id) -> TagLog:
         tag_log = TagLog.query.filter(
@@ -387,16 +389,17 @@ class Helpers(object):
         except KeyError:
             log_group_id = None
         if log_group_id is None:
-            has_food = False
-            has_act = False
-            has_drug = False
+            # Create new log group
+            food_cnt = 0
+            act_cnt = 0
+            drug_cnt = 0
             has_cond_score = False
             if tag.tag_type == TagType.food:
-                has_food = True
+                food_cnt = 1
             elif tag.tag_type == TagType.activity:
-                has_act = True
+                act_cnt = 1
             elif tag.tag_type == TagType.drug:
-                has_drug = True
+                drug_cnt = 1
             new_log_group = LogGroup(
                 avatar_id=data['avatar_id'],
                 group_type=data['group_type'],
@@ -406,26 +409,27 @@ class Helpers(object):
                 day_of_year=data['day_of_year'],
                 log_date=data['log_date'],
                 is_active=True,
-                has_food=has_food,
-                has_act=has_act,
-                has_drug=has_drug,
+                food_cnt=food_cnt,
+                act_cnt=act_cnt,
+                drug_cnt=drug_cnt,
                 has_cond_score=has_cond_score
             )
             db_session.add(new_log_group)
             db_session.commit()
             log_group_id = new_log_group.id
         else:
+            # Existed log group
             log_group = LogGroup.query.filter(
                 LogGroup.id == log_group_id,
                 LogGroup.avatar_id == data['avatar_id'],
                 LogGroup.is_active == True
             ).first()
             if tag.tag_type == TagType.food:
-                log_group.has_food = True
+                log_group.food_cnt += 1
             elif tag.tag_type == TagType.activity:
-                log_group.has_act = True
+                log_group.act_cnt += 1
             elif tag.tag_type == TagType.drug:
-                log_group.has_drug = True
+                log_group.drug_cnt += 1
         new_tag_log = TagLog(
             group_id=log_group_id,
             tag_id=tag.id,
@@ -472,13 +476,13 @@ class Helpers(object):
             return True
 
     @staticmethod
-    def create_profile_tag(avatar_id, tag_id, is_selected, score):
+    def create_profile_tag(avatar_id, tag_id, is_selected, priority):
         profile_tag = ProfileTag(
             avatar_id=avatar_id,
             tag_id=tag_id,
             is_active=True,
             is_selected=is_selected,
-            score=score
+            priority=priority
         )
         db_session.add(profile_tag)
         db_session.commit()
@@ -486,7 +490,7 @@ class Helpers(object):
 
     @staticmethod
     def create_def_profile_tags(avatar_id, language_id):
-        tag_sets = Helpers.get_tag_sets(super_id=19, sort_type='score')
+        tag_sets = Helpers.get_tag_sets(super_id=19, sort_type='priority')
         # ID-19: Profile
         for tag_set in tag_sets:
             if tag_set.sub_id == 20:
@@ -494,12 +498,12 @@ class Helpers(object):
                 Helpers.create_profile_tag(avatar_id=avatar_id,
                                            tag_id=language_id,
                                            is_selected=True,
-                                           score=tag_set.score)
+                                           priority=tag_set.priority)
                 continue
             Helpers.create_profile_tag(avatar_id=avatar_id,
                                        tag_id=tag_set.sub_id,
                                        is_selected=False,
-                                       score=tag_set.score)
+                                       priority=tag_set.priority)
         return True
 
     # UPDATE methods
@@ -561,7 +565,24 @@ class Helpers(object):
         log_group.has_cond_score = True
         db_session.commit()
         return True
-    
+
+    @staticmethod
+    def update_log_group_is_active(log_group: LogGroup):
+        log_group.is_active = False
+        db_session.commit()
+        return True
+
+    @staticmethod
+    def update_log_group_log_cnt(log_group: LogGroup, tag_type):
+        if tag_type == TagType.food:
+            log_group.food_cnt -= 1
+        elif tag_type == TagType.activity:
+            log_group.act_cnt -= 1
+        elif tag_type == TagType.drug:
+            log_group.drug_cnt -= 1
+        db_session.commit()
+        return True
+
     @staticmethod
     def update_tag_log(tag_log: TagLog):
         tag_log.is_active = False
