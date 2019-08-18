@@ -110,12 +110,12 @@ class Helpers(object):
             _js = dict(
                 id=avt_cond.id,
                 avatar_id=avt_cond.avatar_id,
-                tag_id=avt_cond.cond_id,
+                tag_id=avt_cond.tag_id,
                 start_date=start_date,
                 end_date=end_date,
-                eng_name=avt_cond.cond.eng_name,
-                kor_name=avt_cond.cond.kor_name,
-                jpn_name=avt_cond.cond.jpn_name
+                eng_name=avt_cond.tag.eng_name,
+                kor_name=avt_cond.tag.kor_name,
+                jpn_name=avt_cond.tag.jpn_name
             )
             _js_list.append(_js)
         return _js_list
@@ -346,6 +346,14 @@ class Helpers(object):
             ProfileTag.is_active == True
         ).order_by(ProfileTag.score.desc()).all()
         return profile_tags
+    
+    @staticmethod
+    def get_a_tag_log(tag_log_id) -> TagLog:
+        tag_log = TagLog.query.filter(
+            TagLog.id == tag_log_id,
+            TagLog.is_active == True
+        ).first()
+        return tag_log
 
     # CREATE methods
     # -------------------------------------------------------------------------
@@ -433,7 +441,7 @@ class Helpers(object):
         tag = Helpers.get_a_tag(data['tag_id'])
         avatar_cond = AvatarCond.query.filter(
             AvatarCond.avatar_id == data['avatar_id'],
-            AvatarCond.cond_id == tag.id,
+            AvatarCond.tag_id == tag.id,
             AvatarCond.is_active == True
         ).first()
         if avatar_cond:
@@ -448,14 +456,14 @@ class Helpers(object):
             if data['cond_log_type'] == CondLogType.start_date:
                 avatar_cond = AvatarCond(
                     avatar_id=data['avatar_id'],
-                    cond_id=tag.id,
+                    tag_id=tag.id,
                     is_active=True,
                     start_date=data['log_date']
                 )
             else:
                 avatar_cond = AvatarCond(
                     avatar_id=data['avatar_id'],
-                    cond_id=tag.id,
+                    tag_id=tag.id,
                     is_active=True,
                     end_date=data['log_date']
                 )
@@ -551,5 +559,11 @@ class Helpers(object):
     def update_log_group_cond_score(log_group: LogGroup, data):
         log_group.cond_score = data['cond_score']
         log_group.has_cond_score = True
+        db_session.commit()
+        return True
+    
+    @staticmethod
+    def update_tag_log(tag_log: TagLog):
+        tag_log.is_active = False
         db_session.commit()
         return True

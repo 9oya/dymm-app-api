@@ -36,10 +36,10 @@ class Banner(Base):
     kor_subtitle = Column(String(300))
     jpn_subtitle = Column(String(300))
     img_name = Column(String(100))
-    txt_color = Column(String(100))
-    bg_color = Column(String(100))
     created_timestamp = Column(DateTime)
     modified_timestamp = Column(DateTime)
+    bg_color = Column(String(100))
+    txt_color = Column(String(100))
 
 
 class Tag(Base):
@@ -82,7 +82,7 @@ class AvatarCond(Base):
 
     id = Column(Integer, primary_key=True)
     avatar_id = Column(ForeignKey('avatar.id', ondelete='CASCADE'), nullable=False, index=True)
-    cond_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
+    tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
     is_active = Column(Boolean, nullable=False)
     start_date = Column(Date)
     end_date = Column(Date)
@@ -90,7 +90,7 @@ class AvatarCond(Base):
     modified_timestamp = Column(DateTime)
 
     avatar = relationship('Avatar')
-    cond = relationship('Tag')
+    tag = relationship('Tag')
 
 
 class Bookmark(Base):

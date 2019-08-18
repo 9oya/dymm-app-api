@@ -284,3 +284,13 @@ def put_cond_score(group_id=None):
     data = result['data']
     _h.update_log_group_cond_score(log_group, data)
     return ok()
+
+
+@api.route('/log/<int:tag_log_id>', methods=['PUT'])
+@jwt_required
+def put_a_group_of_log(tag_log_id=None):
+    if tag_log_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('group_id'))
+    tag_log = _h.get_a_tag_log(tag_log_id)
+    _h.update_tag_log(tag_log)
+    return ok()
