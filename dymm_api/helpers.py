@@ -5,7 +5,8 @@ from sqlalchemy import text
 
 from dymm_api import b_crypt
 from database import db_session
-from patterns import URIPattern, TagType, AvatarInfo, CondLogType
+from patterns import (URIPattern, TagType, AvatarInfo, CondLogType,
+                      BookmarkSuperTag)
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                     ProfileTag, Tag, TagLog, TagSet)
 
@@ -52,6 +53,13 @@ class Helpers(object):
             TagSet.is_active == True
         ).first()
         return tag_set
+
+    @staticmethod
+    def has_bookmark(avatar_id, tag_id) -> bool:
+        if Helpers.get_a_bookmark(avatar_id=avatar_id, tag_id=tag_id):
+            return True
+        else:
+            return False
 
     # Converters
     # -------------------------------------------------------------------------
@@ -213,6 +221,21 @@ class Helpers(object):
             _js_list.append(_js)
         return _js_list
 
+    @staticmethod
+    def convert_bookmarks_into_js(bookmarks: [Bookmark]):
+        _js_list = list()
+        for bookmark in bookmarks:
+            _js = dict(
+                bookmark_id=bookmark.id,
+                id=bookmark.sub_tag_id,
+                tag_type=bookmark.sub_tag.tag_type,
+                eng_name=bookmark.sub_tag.eng_name,
+                kor_name=bookmark.sub_tag.kor_name,
+                jpn_name=bookmark.sub_tag.jpn_name
+            )
+            _js_list.append(_js)
+        return _js_list
+
     # GET methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -249,6 +272,14 @@ class Helpers(object):
             Avatar.is_active == True
         ).first()
         return avatar
+
+    @staticmethod
+    def get_a_avatar_cond(avatar_cond_id):
+        avt_cond = AvatarCond.query.filter(
+            AvatarCond.id == avatar_cond_id,
+            AvatarCond.is_active == True
+        ).first()
+        return avt_cond
 
     @staticmethod
     def get_avt_cond_list(avatar_id):
@@ -356,6 +387,55 @@ class Helpers(object):
             TagLog.is_active == True
         ).first()
         return tag_log
+
+    @staticmethod
+    def get_a_bookmark(bookmark_id=None, avatar_id=None, tag_id=None):
+        if bookmark_id:
+            bookmark = Bookmark.query.filter(
+                Bookmark.id == bookmark_id,
+                Bookmark.is_active == True
+            ).first()
+            return bookmark
+        elif avatar_id and tag_id:
+            bookmark = Bookmark.query.filter(
+                Bookmark.avatar_id == avatar_id,
+                Bookmark.sub_tag_id == tag_id,
+                Bookmark.is_active == True
+            ).first()
+            return bookmark
+        else:
+            return False
+
+    @staticmethod
+    def get_bookmarks(avatar_id, super_id):
+        bookmarks = Bookmark.query.filter(
+            Bookmark.avatar_id == avatar_id,
+            Bookmark.super_tag_id == super_id,
+            Bookmark.is_active == True
+        ).all()
+        return bookmarks
+
+    @staticmethod
+    def get_a_bookmark_even_inactive(avatar_id, sub_id):
+        bookmark = Bookmark.query.filter(
+            Bookmark.avatar_id == avatar_id,
+            Bookmark.sub_tag_id == sub_id
+        ).first()
+        return bookmark
+
+    @staticmethod
+    def get_bookmark_super_tag_id(tag_type):
+        if tag_type == TagType.food:
+            super_id = BookmarkSuperTag.food
+        elif tag_type == TagType.activity:
+            super_id = BookmarkSuperTag.activity
+        elif tag_type == TagType.drug:
+            super_id = BookmarkSuperTag.drug
+        elif tag_type == TagType.condition:
+            super_id = BookmarkSuperTag.condition
+        else:
+            return False
+        return super_id
 
     # CREATE methods
     # -------------------------------------------------------------------------
@@ -506,6 +586,18 @@ class Helpers(object):
                                        priority=tag_set.priority)
         return True
 
+    @staticmethod
+    def create_a_bookmark(avatar_id, super_id, sub_id):
+        bookmark = Bookmark(
+            avatar_id=avatar_id,
+            super_tag_id=super_id,
+            sub_tag_id=sub_id,
+            is_active=True
+        )
+        db_session.add(bookmark)
+        db_session.commit()
+        return True
+
     # UPDATE methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -586,5 +678,20 @@ class Helpers(object):
     @staticmethod
     def update_tag_log(tag_log: TagLog):
         tag_log.is_active = False
+        db_session.commit()
+        return True
+
+    @staticmethod
+    def update_avatar_cond_is_active(avatar_cond: AvatarCond):
+        avatar_cond.is_active = False
+        db_session.commit()
+        return True
+
+    @staticmethod
+    def update_bookmark_is_active(bookmark: Bookmark):
+        if bookmark.is_active:
+            bookmark.is_active = False
+        else:
+            bookmark.is_active = True
         db_session.commit()
         return True

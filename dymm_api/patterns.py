@@ -59,9 +59,18 @@ class TagType:
     history = 15
 
 
+class BookmarkSuperTag:
+    history = 24
+    food = 25
+    activity = 26
+    drug = 27
+    condition = 28
+
+
 class AvatarInfo:
     first_name = 11
     last_name = 12
-    ph_number = 13
-    profile_type = 14
+    email = 13
+    ph_number = 14
     intro = 15
+    profile_type = 16

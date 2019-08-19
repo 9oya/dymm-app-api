@@ -6,7 +6,8 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,
 
 from dymm_api import b_crypt
 from errors import ok, forbidden, bad_req, unauthorized
-from patterns import MsgPattern, RegExPatter, ErrorPattern, TagType
+from patterns import (MsgPattern, RegExPatter, ErrorPattern, TagType,
+                      BookmarkSuperTag)
 from schemas import (validate_schema, update_avatar_schema, create_log_schema,
                      auth_avatar_schema, create_avatar_schema,
                      create_cond_log_schema, update_cond_score_schema)
@@ -68,13 +69,31 @@ def fetch_banners():
 
 
 @api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])
-def fetch_tag_sets(tag_id=None, sort_type=None):
+@api.route('/tag/<int:tag_id>/set/<sort_type>/<int:avatar_id>',
+           methods=['GET'])
+def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
-    tag_sets = _h.get_tag_sets(tag_id, sort_type)
     tag_js = _h.convert_a_tag_into_js(tag)
+    if avatar_id and tag.tag_type == TagType.bookmark:
+        if (tag.id == BookmarkSuperTag.food
+                or tag.id == BookmarkSuperTag.activity
+                or tag.id == BookmarkSuperTag.drug
+                or tag.id == BookmarkSuperTag.condition):
+            bookmarks = _h.get_bookmarks(avatar_id, tag.id)
+            bookmarks_js = _h.convert_bookmarks_into_js(bookmarks)
+            return ok(dict(tag=tag_js, sub_tags=bookmarks_js))
+    tag_sets = _h.get_tag_sets(tag_id, sort_type)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
+    if avatar_id:
+        if (tag.tag_type == TagType.food
+                or tag.tag_type == TagType.activity
+                or tag.tag_type == TagType.drug):
+            bookmark = _h.get_a_bookmark(avatar_id=avatar_id, tag_id=tag_id)
+            if bookmark:
+                return ok(dict(tag=tag_js, sub_tags=tag_sets_js,
+                               bookmark_id=bookmark.id))
     return ok(dict(tag=tag_js, sub_tags=tag_sets_js))
 
 
@@ -243,6 +262,28 @@ def post_cond_log():
     return ok()
 
 
+@api.route('/avatar/<int:avatar_id>/bookmark/<int:tag_type>/<int:sub_id>',
+           methods=['POST'])
+@jwt_required
+def post_bookmark(avatar_id=None, tag_type=None, sub_id=None):
+    if not avatar_id:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if not tag_type:
+        return bad_req(_m.EMPTY_PARAM.format('tag_type'))
+    if not sub_id:
+        return bad_req(_m.EMPTY_PARAM.format('sub_id'))
+    bookmark = _h.get_a_bookmark_even_inactive(avatar_id, sub_id)
+    if bookmark:
+        _h.update_bookmark_is_active(bookmark)
+        return ok(message=_m.OK_PUT.format('bookmark'))
+    else:
+        super_id = _h.get_bookmark_super_tag_id(tag_type)
+        if not super_id:
+            return bad_req(_m.BAD_PARAM.format('tag_type'))
+        _h.create_a_bookmark(avatar_id, super_id, sub_id)
+        return ok(message=_m.OK_POST.format('bookmark'))
+
+
 # PUT services
 # -----------------------------------------------------------------------------
 @api.route('/avatar', methods=['PUT'])
@@ -301,4 +342,27 @@ def put_a_group_of_log(tag_log_id=None):
     _h.update_tag_log(tag_log)
     log_group = _h.get_a_log_group(tag_log.group_id)
     _h.update_log_group_log_cnt(log_group, tag_log.tag.tag_type)
+    return ok()
+
+
+@api.route('/avatar/cond/<int:avatar_cond_id>', methods=['PUT'])
+@jwt_required
+def put_a_avatar_cond(avatar_cond_id=None):
+    if avatar_cond_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_cond_id'))
+    avatar_cond = _h.get_a_avatar_cond(avatar_cond_id)
+    _h.update_avatar_cond_is_active(avatar_cond)
+    return ok()
+
+
+@api.route('/avatar/<int:avatar_id>/bookmark/<int:bookmark_id>',
+           methods=['PUT'])
+@jwt_required
+def put_bookmark(avatar_id=None, bookmark_id=None):
+    if not avatar_id:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if not bookmark_id:
+        return bad_req(_m.EMPTY_PARAM.format('bookmark_id'))
+    bookmark = _h.get_a_bookmark(bookmark_id)
+    _h.update_bookmark_is_active(bookmark)
     return ok()

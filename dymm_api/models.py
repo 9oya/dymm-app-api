@@ -36,7 +36,7 @@ class Banner(Base):
     kor_subtitle = Column(String(300))
     jpn_subtitle = Column(String(300))
     img_name = Column(String(100))
-    created_timestamp = Column(DateTime)
+    created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
     bg_color = Column(String(100))
     txt_color = Column(String(100))
@@ -101,7 +101,7 @@ class Bookmark(Base):
     super_tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
     sub_tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
     is_active = Column(Boolean, nullable=False)
-    created_timestamp = Column(DateTime)
+    created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
 
     avatar = relationship('Avatar')
@@ -139,7 +139,7 @@ class LogHistory(Base):
     avatar_id = Column(ForeignKey('avatar.id', ondelete='CASCADE'), nullable=False, index=True)
     tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
     is_active = Column(Boolean, nullable=False)
-    created_timestamp = Column(DateTime)
+    created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
 
     avatar = relationship('Avatar')
@@ -186,7 +186,7 @@ class TagLog(Base):
     is_active = Column(Boolean, nullable=False)
     x_val = Column(SmallInteger)
     y_val = Column(SmallInteger)
-    create_timestamp = Column(DateTime)
+    create_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
 
     group = relationship('LogGroup')

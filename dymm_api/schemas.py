@@ -65,7 +65,7 @@ update_avatar_schema = {
             "type": "integer"
         },
         "target": {
-            "type": "string"
+            "type": "integer"
         },
         "new_info": {
             "type": "string"
