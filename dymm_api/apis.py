@@ -76,6 +76,10 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None):
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
     tag_js = _h.convert_a_tag_into_js(tag)
+    if avatar_id and tag.tag_type == TagType.history:
+        log_histories = _h.get_log_histories(avatar_id)
+        log_histories_js = _h.convert_log_histories_into_js(log_histories)
+        return ok(dict(tag=tag_js, sub_tags=log_histories_js))
     if avatar_id and tag.tag_type == TagType.bookmark:
         if (tag.id == BookmarkSuperTag.food
                 or tag.id == BookmarkSuperTag.activity
@@ -89,7 +93,8 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None):
     if avatar_id:
         if (tag.tag_type == TagType.food
                 or tag.tag_type == TagType.activity
-                or tag.tag_type == TagType.drug):
+                or tag.tag_type == TagType.drug
+                or tag.tag_type == TagType.condition):
             bookmark = _h.get_a_bookmark(avatar_id=avatar_id, tag_id=tag_id)
             if bookmark:
                 return ok(dict(tag=tag_js, sub_tags=tag_sets_js,
@@ -248,6 +253,12 @@ def post_new_log():
         return bad_req(result['message'])
     data = result['data']
     _h.create_log(data)
+    log_history = _h.get_a_log_history_even_inactive(data['avatar_id'],
+                                                     data['tag_id'])
+    if log_history:
+        _h.update_log_history_date(log_history)
+    else:
+        _h.create_a_log_history(data['avatar_id'], data['tag_id'])
     return ok()
 
 
@@ -259,6 +270,12 @@ def post_cond_log():
         return bad_req(result['message'])
     data = result['data']
     _h.create_cond_log(data)
+    log_history = _h.get_a_log_history_even_inactive(data['avatar_id'],
+                                                     data['tag_id'])
+    if log_history:
+        _h.update_log_history_date(log_history)
+    else:
+        _h.create_a_log_history(data['avatar_id'], data['tag_id'])
     return ok()
 
 

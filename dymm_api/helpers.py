@@ -236,6 +236,20 @@ class Helpers(object):
             _js_list.append(_js)
         return _js_list
 
+    @staticmethod
+    def convert_log_histories_into_js(log_histories: [LogHistory]):
+        _js_list = list()
+        for log_history in log_histories:
+            _js = dict(
+                id=log_history.tag_id,
+                tag_type=log_history.tag.tag_type,
+                eng_name=log_history.tag.eng_name,
+                kor_name=log_history.tag.kor_name,
+                jpn_name=log_history.tag.jpn_name
+            )
+            _js_list.append(_js)
+        return _js_list
+
     # GET methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -437,6 +451,24 @@ class Helpers(object):
             return False
         return super_id
 
+    @staticmethod
+    def get_a_log_history_even_inactive(avatar_id, tag_id):
+        log_history = LogHistory.query.filter(
+            LogHistory.avatar_id == avatar_id,
+            LogHistory.tag_id == tag_id
+        ).first()
+        return log_history
+
+    @staticmethod
+    def get_log_histories(avatar_id):
+        log_histories = LogHistory.query.filter(
+            LogHistory.avatar_id == avatar_id,
+            LogHistory.is_active == True
+        ).order_by(
+            LogHistory.modified_timestamp.desc()
+        ).limit(24).all()
+        return log_histories
+
     # CREATE methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -598,6 +630,17 @@ class Helpers(object):
         db_session.commit()
         return True
 
+    @staticmethod
+    def create_a_log_history(avatar_id, tag_id):
+        log_history = LogHistory(
+            avatar_id=avatar_id,
+            tag_id=tag_id,
+            is_active=True,
+            modified_timestamp=text("timezone('utc'::text, now())")
+        )
+        db_session.add(log_history)
+        db_session.commit()
+
     # UPDATE methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -693,5 +736,11 @@ class Helpers(object):
             bookmark.is_active = False
         else:
             bookmark.is_active = True
+        db_session.commit()
+        return True
+
+    @staticmethod
+    def update_log_history_date(log_history: LogHistory):
+        log_history.modified_timestamp = text("timezone('utc'::text, now())")
         db_session.commit()
         return True
