@@ -49,7 +49,7 @@ def confirm_mail_token_service(token=None):
 @jwt_required
 def send_mail_confirm_link_again(avatar_id=None, email=None):
     if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('user_id'))
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     if email is None:
         return bad_req(_m.EMPTY_PARAM.format('email'))
     if not re.match(_r.EMAIL, email):
@@ -66,6 +66,19 @@ def fetch_banners():
     banners = _h.get_banners()
     banners_js = _h.convert_banners_into_js(banners)
     return ok(data=banners_js)
+
+
+@api.route('/tag/<int:tag_id>/search/<string:word>', methods=['GET'])
+def fetch_tags(tag_id=None, word=None):
+    if tag_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    if word is None:
+        return bad_req(_m.EMPTY_PARAM.format('word'))
+    super_tag = _h.get_a_tag(tag_id)
+    tag_js = _h.convert_a_tag_into_js(super_tag)
+    tags = _h.search_tags_from_super_div_tag(super_tag, word)
+    tags_js = _h.convert_tags_into_js(tags)
+    return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
 @api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])

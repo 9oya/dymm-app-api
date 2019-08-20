@@ -1,7 +1,7 @@
 import random, datetime, pytz
 
 from flask_jwt_extended import create_access_token, create_refresh_token
-from sqlalchemy import text
+from sqlalchemy import text, func, case
 
 from dymm_api import b_crypt
 from database import db_session
@@ -150,7 +150,7 @@ class Helpers(object):
         return _js_list
 
     @staticmethod
-    def convert_tag_logs_into_js(tag_logs: [TagLog]) -> list:
+    def convert_tag_logs_into_js(tag_logs: [TagLog]) -> [dict]:
         _js_list = list()
         for tag_log in tag_logs:
             _js = dict(
@@ -167,7 +167,7 @@ class Helpers(object):
         return _js_list
 
     @staticmethod
-    def convert_a_tag_into_js(tag: Tag):
+    def convert_a_tag_into_js(tag: Tag) -> dict:
         _js = dict(id=tag.id,
                    tag_type=tag.tag_type,
                    eng_name=tag.eng_name,
@@ -176,7 +176,19 @@ class Helpers(object):
         return _js
 
     @staticmethod
-    def convert_tag_sets_into_js(tag_sets):
+    def convert_tags_into_js(tags: [Tag]) -> [dict]:
+        _js_list = list()
+        for tag in tags:
+            _js = dict(id=tag.id,
+                       tag_type=tag.tag_type,
+                       eng_name=tag.eng_name,
+                       kor_name=tag.kor_name,
+                       jpn_name=tag.jpn_name)
+            _js_list.append(_js)
+        return _js_list
+
+    @staticmethod
+    def convert_tag_sets_into_js(tag_sets) -> [dict]:
         _js_list = list()
         for tag_set in tag_sets:
             _js = dict(id=tag_set.sub.id,
@@ -272,6 +284,63 @@ class Helpers(object):
             TagSet.sub_id == sub_id
         ).first()
         return tag_set.super
+
+    @staticmethod
+    def search_tags_from_super_div_tag(super_tag: Tag, keyword: str):
+        if super_tag.division1 == 0:
+            tags = Tag.query.filter(
+                Tag.class1 == super_tag.class1,
+                Tag.division1 != 0,
+                Tag.division1 != 20,
+                func.lower(Tag.eng_name).contains(keyword.lower(),
+                                                  autoescape=True),
+                Tag.is_active == True
+            ).order_by(Tag.eng_name).all()
+        elif super_tag.division2 == 0:
+            tags = Tag.query.filter(
+                Tag.class1 == super_tag.class1,
+                Tag.division1 == super_tag.division1,
+                Tag.division2 != 0,
+                func.lower(Tag.eng_name).contains(keyword.lower(),
+                                                  autoescape=True),
+                Tag.is_active == True
+            ).order_by(Tag.eng_name).all()
+        elif super_tag.division3 == 0:
+            tags = Tag.query.filter(
+                Tag.class1 == super_tag.class1,
+                Tag.division1 == super_tag.division1,
+                Tag.division2 == super_tag.division2,
+                Tag.division3 != 0,
+                func.lower(Tag.eng_name).contains(keyword.lower(),
+                                                  autoescape=True),
+                Tag.is_active == True
+            ).order_by(Tag.eng_name).all()
+        elif super_tag.division4 == 0:
+            tags = Tag.query.filter(
+                Tag.class1 == super_tag.class1,
+                Tag.division1 == super_tag.division1,
+                Tag.division2 == super_tag.division2,
+                Tag.division3 == super_tag.division3,
+                Tag.division4 != 0,
+                func.lower(Tag.eng_name).contains(keyword.lower(),
+                                                  autoescape=True),
+                Tag.is_active == True
+            ).order_by(Tag.eng_name).all()
+        elif super_tag.division5 == 0:
+            tags = Tag.query.filter(
+                Tag.class1 == super_tag.class1,
+                Tag.division1 == super_tag.division1,
+                Tag.division2 == super_tag.division2,
+                Tag.division3 == super_tag.division3,
+                Tag.division4 == super_tag.division4,
+                Tag.division5 != 0,
+                func.lower(Tag.eng_name).contains(keyword.lower(),
+                                                  autoescape=True),
+                Tag.is_active == True
+            ).order_by(Tag.eng_name).all()
+        else:
+            return False
+        return tags
 
     @staticmethod
     def get_a_avatar(avatar_id=None, email=None):
