@@ -1,16 +1,17 @@
-import random, datetime, pytz
+import random, datetime, pytz, re
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import text, func, case
 
 from dymm_api import b_crypt
 from database import db_session
-from patterns import (URIPattern, TagType, AvatarInfo, CondLogType,
-                      BookmarkSuperTag)
+from patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
+                      BookmarkSuperTag, RegExPatter)
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                     ProfileTag, Tag, TagLog, TagSet)
 
 _u = URIPattern()
+_r = RegExPatter
 
 
 def str_to_bool(v):
@@ -286,35 +287,111 @@ class Helpers(object):
         return tag_set.super
 
     @staticmethod
-    def search_tags_from_super_div_tag(super_tag: Tag, keyword: str):
+    def search_low_div_tags_from_super_div_tag(super_tag: Tag, keyword: str):
+        tag_name = Tag.eng_name
+        _reg_obj = re.compile(_r.kor_name)
+        if _reg_obj.match(keyword[0]):
+            tag_name = Tag.kor_name
         if super_tag.division1 == 0:
+            if super_tag.class1 == TagClass.drug:
+                drug_tags = Tag.query.filter(
+                    Tag.class1 == TagClass.drug_abc,
+                    Tag.division1 != 0,
+                    Tag.division2 != 0,
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).order_by(tag_name).all()
+                supp_tags = Tag.query.filter(
+                    Tag.class1 == TagClass.food,
+                    Tag.division1 == 20,  # 20: Supplements
+                    Tag.division2 != 0,
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).order_by(tag_name).all()
+                # supp_tags.extend(drug_tags)
+                drug_tags.extend(supp_tags)
+                return drug_tags
+            if super_tag.class1 == TagClass.food:
+                tags = Tag.query.filter(
+                    Tag.class1 == super_tag.class1,
+                    Tag.division1 != 0,
+                    Tag.division1 != 20,  # 20: Supplements
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).all()
+                return tags
+            if super_tag.class1 == TagClass.cond:
+                cond_tags = Tag.query.filter(
+                    Tag.class1 == super_tag.class1,
+                    Tag.division1 != 0,
+                    Tag.division4 == 0,
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).all()
+                return cond_tags
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
                 Tag.division1 != 0,
-                Tag.division1 != 20,
-                func.lower(Tag.eng_name).contains(keyword.lower(),
+                func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                 Tag.is_active == True
-            ).order_by(Tag.eng_name).all()
+            ).all()
         elif super_tag.division2 == 0:
+            if super_tag.class1 == TagClass.drug:
+                drug_tags = Tag.query.filter(
+                    Tag.class1 == TagClass.drug_abc,
+                    Tag.division1 == super_tag.division1,
+                    Tag.division2 != 0,
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).order_by(tag_name).all()
+                return drug_tags
+            if super_tag.class1 == TagClass.cond:
+                cond_tags = Tag.query.filter(
+                    Tag.class1 == super_tag.class1,
+                    Tag.division1 == super_tag.division1,
+                    Tag.division2 != 0,
+                    Tag.division4 == 0,
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).order_by(tag_name).all()
+                return cond_tags
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
                 Tag.division1 == super_tag.division1,
                 Tag.division2 != 0,
-                func.lower(Tag.eng_name).contains(keyword.lower(),
+                func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                 Tag.is_active == True
-            ).order_by(Tag.eng_name).all()
+            ).order_by(tag_name).all()
         elif super_tag.division3 == 0:
+            if super_tag.class1 == TagClass.cond:
+                cond_tags = Tag.query.filter(
+                    Tag.class1 == super_tag.class1,
+                    Tag.division1 == super_tag.division1,
+                    Tag.division2 == super_tag.division2,
+                    Tag.division3 != 0,
+                    Tag.division4 == 0,
+                    func.lower(tag_name).contains(keyword.lower(),
+                                                      autoescape=True),
+                    Tag.is_active == True
+                ).order_by(tag_name).all()
+                return cond_tags
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
                 Tag.division1 == super_tag.division1,
                 Tag.division2 == super_tag.division2,
                 Tag.division3 != 0,
-                func.lower(Tag.eng_name).contains(keyword.lower(),
+                func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                 Tag.is_active == True
-            ).order_by(Tag.eng_name).all()
+            ).order_by(tag_name).all()
         elif super_tag.division4 == 0:
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -322,10 +399,10 @@ class Helpers(object):
                 Tag.division2 == super_tag.division2,
                 Tag.division3 == super_tag.division3,
                 Tag.division4 != 0,
-                func.lower(Tag.eng_name).contains(keyword.lower(),
+                func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                 Tag.is_active == True
-            ).order_by(Tag.eng_name).all()
+            ).order_by(tag_name).all()
         elif super_tag.division5 == 0:
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -334,10 +411,10 @@ class Helpers(object):
                 Tag.division3 == super_tag.division3,
                 Tag.division4 == super_tag.division4,
                 Tag.division5 != 0,
-                func.lower(Tag.eng_name).contains(keyword.lower(),
+                func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                 Tag.is_active == True
-            ).order_by(Tag.eng_name).all()
+            ).order_by(tag_name).all()
         else:
             return False
         return tags

@@ -69,14 +69,14 @@ def fetch_banners():
 
 
 @api.route('/tag/<int:tag_id>/search/<string:word>', methods=['GET'])
-def fetch_tags(tag_id=None, word=None):
+def search_tags(tag_id=None, word=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     if word is None:
         return bad_req(_m.EMPTY_PARAM.format('word'))
     super_tag = _h.get_a_tag(tag_id)
     tag_js = _h.convert_a_tag_into_js(super_tag)
-    tags = _h.search_tags_from_super_div_tag(super_tag, word)
+    tags = _h.search_low_div_tags_from_super_div_tag(super_tag, word)
     tags_js = _h.convert_tags_into_js(tags)
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 

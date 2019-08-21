@@ -40,6 +40,7 @@ class RegExPatter:
     year = '[1960-2200]'
     month = '[1-12]'
     week_of_year = '[1-54]'
+    kor_name = '[가-힣]'
 
 
 class CondLogType:
@@ -57,6 +58,22 @@ class TagType:
     bookmark = 13
     diary = 14
     history = 15
+
+
+class TagClass:
+    act = 2
+    cond = 3
+    drug = 4
+    food = 5
+    drug_abc = 7
+
+
+class TagId:
+    act = 2
+    cond = 3
+    drug = 4
+    food = 5
+    supp = 1040
 
 
 class BookmarkSuperTag:
