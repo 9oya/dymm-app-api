@@ -299,7 +299,7 @@ class Helpers(object):
                     Tag.division1 != 0,
                     Tag.division2 != 0,
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).order_by(tag_name).all()
                 supp_tags = Tag.query.filter(
@@ -307,7 +307,7 @@ class Helpers(object):
                     Tag.division1 == 20,  # 20: Supplements
                     Tag.division2 != 0,
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).order_by(tag_name).all()
                 # supp_tags.extend(drug_tags)
@@ -319,7 +319,7 @@ class Helpers(object):
                     Tag.division1 != 0,
                     Tag.division1 != 20,  # 20: Supplements
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).all()
                 return tags
@@ -329,7 +329,7 @@ class Helpers(object):
                     Tag.division1 != 0,
                     Tag.division4 == 0,
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).all()
                 return cond_tags
@@ -337,7 +337,7 @@ class Helpers(object):
                 Tag.class1 == super_tag.class1,
                 Tag.division1 != 0,
                 func.lower(tag_name).contains(keyword.lower(),
-                                                  autoescape=True),
+                                              autoescape=True),
                 Tag.is_active == True
             ).all()
         elif super_tag.division2 == 0:
@@ -347,7 +347,7 @@ class Helpers(object):
                     Tag.division1 == super_tag.division1,
                     Tag.division2 != 0,
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).order_by(tag_name).all()
                 return drug_tags
@@ -358,7 +358,7 @@ class Helpers(object):
                     Tag.division2 != 0,
                     Tag.division4 == 0,
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).order_by(tag_name).all()
                 return cond_tags
@@ -367,7 +367,7 @@ class Helpers(object):
                 Tag.division1 == super_tag.division1,
                 Tag.division2 != 0,
                 func.lower(tag_name).contains(keyword.lower(),
-                                                  autoescape=True),
+                                              autoescape=True),
                 Tag.is_active == True
             ).order_by(tag_name).all()
         elif super_tag.division3 == 0:
@@ -379,7 +379,7 @@ class Helpers(object):
                     Tag.division3 != 0,
                     Tag.division4 == 0,
                     func.lower(tag_name).contains(keyword.lower(),
-                                                      autoescape=True),
+                                                  autoescape=True),
                     Tag.is_active == True
                 ).order_by(tag_name).all()
                 return cond_tags
@@ -389,7 +389,7 @@ class Helpers(object):
                 Tag.division2 == super_tag.division2,
                 Tag.division3 != 0,
                 func.lower(tag_name).contains(keyword.lower(),
-                                                  autoescape=True),
+                                              autoescape=True),
                 Tag.is_active == True
             ).order_by(tag_name).all()
         elif super_tag.division4 == 0:
@@ -400,7 +400,7 @@ class Helpers(object):
                 Tag.division3 == super_tag.division3,
                 Tag.division4 != 0,
                 func.lower(tag_name).contains(keyword.lower(),
-                                                  autoescape=True),
+                                              autoescape=True),
                 Tag.is_active == True
             ).order_by(tag_name).all()
         elif super_tag.division5 == 0:
@@ -412,7 +412,7 @@ class Helpers(object):
                 Tag.division4 == super_tag.division4,
                 Tag.division5 != 0,
                 func.lower(tag_name).contains(keyword.lower(),
-                                                  autoescape=True),
+                                              autoescape=True),
                 Tag.is_active == True
             ).order_by(tag_name).all()
         else:
@@ -821,6 +821,8 @@ class Helpers(object):
             db_session.commit()
             return True
         elif target == AvatarInfo.intro:
+            if new_info == "":
+                new_info = None
             avatar = Avatar.query.filter(
                 Avatar.id == avatar_id,
                 Avatar.is_active == True

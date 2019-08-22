@@ -7,10 +7,8 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,
 from dymm_api import b_crypt
 from errors import ok, forbidden, bad_req, unauthorized
 from patterns import (MsgPattern, RegExPatter, ErrorPattern, TagType,
-                      BookmarkSuperTag)
-from schemas import (validate_schema, update_avatar_schema, create_log_schema,
-                     auth_avatar_schema, create_avatar_schema,
-                     create_cond_log_schema, update_cond_score_schema)
+                      BookmarkSuperTag, TagClass)
+from schemas import Schema, validate_schema
 from mail import confirm_mail_token, send_mail
 from helpers import Helpers, str_to_bool
 
@@ -19,6 +17,7 @@ _m = MsgPattern()
 _r = RegExPatter()
 _e = ErrorPattern()
 _h = Helpers()
+_s = Schema()
 
 
 # GET services
@@ -68,15 +67,17 @@ def fetch_banners():
     return ok(data=banners_js)
 
 
-@api.route('/tag/<int:tag_id>/search/<string:word>', methods=['GET'])
-def search_tags(tag_id=None, word=None):
+@api.route('/tag/<int:tag_id>/search', methods=['POST'])
+def search_tags(tag_id=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
-    if word is None:
-        return bad_req(_m.EMPTY_PARAM.format('word'))
+    result = validate_schema(request.get_json(), _s.search_key_word)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
     super_tag = _h.get_a_tag(tag_id)
     tag_js = _h.convert_a_tag_into_js(super_tag)
-    tags = _h.search_low_div_tags_from_super_div_tag(super_tag, word)
+    tags = _h.search_low_div_tags_from_super_div_tag(super_tag, data['key_word'])
     tags_js = _h.convert_tags_into_js(tags)
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 
@@ -101,7 +102,9 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None):
             bookmarks = _h.get_bookmarks(avatar_id, tag.id)
             bookmarks_js = _h.convert_bookmarks_into_js(bookmarks)
             return ok(dict(tag=tag_js, sub_tags=bookmarks_js))
-    tag_sets = _h.get_tag_sets(tag_id, sort_type)
+    if tag.class1 == TagClass.drug and tag.division1 != 0:
+        sort_type = 'eng'
+    tag_sets = _h.get_tag_sets(tag.id, sort_type)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
     if avatar_id:
         if (tag.tag_type == TagType.food
@@ -219,7 +222,7 @@ def fetch_group_of_logs(group_id=None):
 # -----------------------------------------------------------------------------
 @api.route('/avatar', methods=['POST'])
 def auth_existed_avatar():
-    result = validate_schema(request.get_json(), auth_avatar_schema)
+    result = validate_schema(request.get_json(), _s.auth_avatar)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
@@ -236,7 +239,7 @@ def auth_existed_avatar():
 
 @api.route('/avatar/create', methods=['POST'])
 def create_new_avatar():
-    result = validate_schema(request.get_json(), create_avatar_schema)
+    result = validate_schema(request.get_json(), _s.create_avatar)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
@@ -261,7 +264,7 @@ def refresh_access_token():
 @api.route('/log', methods=['POST'])
 @jwt_required
 def post_new_log():
-    result = validate_schema(request.get_json(), create_log_schema)
+    result = validate_schema(request.get_json(), _s.create_log)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
@@ -278,7 +281,7 @@ def post_new_log():
 @api.route('/log/cond', methods=['POST'])
 @jwt_required
 def post_cond_log():
-    result = validate_schema(request.get_json(), create_cond_log_schema)
+    result = validate_schema(request.get_json(), _s.create_avatar_cond)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
@@ -319,7 +322,7 @@ def post_bookmark(avatar_id=None, tag_type=None, sub_id=None):
 @api.route('/avatar', methods=['PUT'])
 @jwt_required
 def put_avatar_info():
-    result = validate_schema(request.get_json(), update_avatar_schema)
+    result = validate_schema(request.get_json(), _s.update_avatar)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
@@ -350,7 +353,7 @@ def put_cond_score(group_id=None, option=None):
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
     if option == 'cond-score':
-        result = validate_schema(request.get_json(), update_cond_score_schema)
+        result = validate_schema(request.get_json(), _s.update_cond_score)
         if not result['ok']:
             return bad_req(result['message'])
         data = result['data']
