@@ -1,7 +1,10 @@
 from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Integer,
                         SmallInteger, String, text)
 from sqlalchemy.orm import relationship
-from database import Base
+# from database import Base
+from dymm_api import db
+
+Base = db.Model
 
 
 class Avatar(Base):

@@ -3,8 +3,8 @@ import random, datetime, pytz, re
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import text, func, case
 
-from dymm_api import b_crypt
-from database import db_session
+from dymm_api import b_crypt, db
+# from database import db_session
 from patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
                       BookmarkSuperTag, RegExPatter)
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
@@ -12,6 +12,7 @@ from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
 
 _u = URIPattern()
 _r = RegExPatter
+db_session = db.session
 
 
 def str_to_bool(v):
@@ -499,8 +500,18 @@ class Helpers(object):
         return tag_logs
 
     @staticmethod
-    def get_tag_sets(super_id: int, sort_type):
+    def get_tag_sets(super_id: int, sort_type, page=None):
         if sort_type == 'eng':
+            if page:
+                # tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
+                #     TagSet.super_id == super_id,
+                #     TagSet.is_active == True
+                # ).order_by(Tag.eng_name).paginate(page, 30, False).items
+                tag_sets = TagSet.query.join(TagSet.sub).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(Tag.eng_name).paginate(page, 30, False).items
+                return tag_sets
             tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
                 TagSet.super_id == super_id,
                 TagSet.is_active == True

@@ -83,9 +83,12 @@ def search_tags(tag_id=None):
 
 
 @api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])
-@api.route('/tag/<int:tag_id>/set/<sort_type>/<int:avatar_id>',
+@api.route('/tag/<int:tag_id>/set/<sort_type>/page/<int:page_num>',
            methods=['GET'])
-def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None):
+@api.route('/tag/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/page/'
+           '<int:page_num>',
+           methods=['GET'])
+def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page_num=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
@@ -104,7 +107,7 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None):
             return ok(dict(tag=tag_js, sub_tags=bookmarks_js))
     if tag.class1 == TagClass.drug and tag.division1 != 0:
         sort_type = 'eng'
-    tag_sets = _h.get_tag_sets(tag.id, sort_type)
+    tag_sets = _h.get_tag_sets(tag.id, sort_type, page_num)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
     if avatar_id:
         if (tag.tag_type == TagType.food
