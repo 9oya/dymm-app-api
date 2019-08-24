@@ -288,7 +288,8 @@ class Helpers(object):
         return tag_set.super
 
     @staticmethod
-    def search_low_div_tags_from_super_div_tag(super_tag: Tag, keyword: str):
+    def search_low_div_tags_from_up_div_tag(super_tag: Tag, keyword: str,
+                                            page=None, per_page=40):
         tag_name = Tag.eng_name
         _reg_obj = re.compile(_r.kor_name)
         if _reg_obj.match(keyword[0]):
@@ -302,7 +303,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).order_by(tag_name).all()
+                ).paginate(page, (per_page / 2), False).items
                 supp_tags = Tag.query.filter(
                     Tag.class1 == TagClass.food,
                     Tag.division1 == 20,  # 20: Supplements
@@ -310,7 +311,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).order_by(tag_name).all()
+                ).paginate(page, (per_page / 2), False).items
                 # supp_tags.extend(drug_tags)
                 drug_tags.extend(supp_tags)
                 return drug_tags
@@ -322,7 +323,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).all()
+                ).paginate(page, per_page, False).items
                 return tags
             if super_tag.class1 == TagClass.cond:
                 cond_tags = Tag.query.filter(
@@ -332,7 +333,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).all()
+                ).paginate(page, per_page, False).items
                 return cond_tags
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -340,7 +341,7 @@ class Helpers(object):
                 func.lower(tag_name).contains(keyword.lower(),
                                               autoescape=True),
                 Tag.is_active == True
-            ).all()
+            ).paginate(page, per_page, False).items
         elif super_tag.division2 == 0:
             if super_tag.class1 == TagClass.drug:
                 drug_tags = Tag.query.filter(
@@ -350,7 +351,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).order_by(tag_name).all()
+                ).paginate(page, per_page, False).items
                 return drug_tags
             if super_tag.class1 == TagClass.cond:
                 cond_tags = Tag.query.filter(
@@ -361,7 +362,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).order_by(tag_name).all()
+                ).paginate(page, per_page, False).items
                 return cond_tags
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -370,7 +371,7 @@ class Helpers(object):
                 func.lower(tag_name).contains(keyword.lower(),
                                               autoescape=True),
                 Tag.is_active == True
-            ).order_by(tag_name).all()
+            ).paginate(page, per_page, False).items
         elif super_tag.division3 == 0:
             if super_tag.class1 == TagClass.cond:
                 cond_tags = Tag.query.filter(
@@ -382,7 +383,7 @@ class Helpers(object):
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).order_by(tag_name).all()
+                ).paginate(page, per_page, False).items
                 return cond_tags
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -392,7 +393,7 @@ class Helpers(object):
                 func.lower(tag_name).contains(keyword.lower(),
                                               autoescape=True),
                 Tag.is_active == True
-            ).order_by(tag_name).all()
+            ).paginate(page, per_page, False).items
         elif super_tag.division4 == 0:
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -403,7 +404,7 @@ class Helpers(object):
                 func.lower(tag_name).contains(keyword.lower(),
                                               autoescape=True),
                 Tag.is_active == True
-            ).order_by(tag_name).all()
+            ).paginate(page, per_page, False).items
         elif super_tag.division5 == 0:
             tags = Tag.query.filter(
                 Tag.class1 == super_tag.class1,
@@ -415,7 +416,7 @@ class Helpers(object):
                 func.lower(tag_name).contains(keyword.lower(),
                                               autoescape=True),
                 Tag.is_active == True
-            ).order_by(tag_name).all()
+            ).paginate(page, per_page, False).items
         else:
             return False
         return tags
@@ -500,33 +501,55 @@ class Helpers(object):
         return tag_logs
 
     @staticmethod
-    def get_tag_sets(super_id: int, sort_type, page=None):
+    def get_tag_sets(super_id: int, sort_type, page=None, per_page=40):
         if sort_type == 'eng':
             if page:
-                # tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
-                #     TagSet.super_id == super_id,
-                #     TagSet.is_active == True
-                # ).order_by(Tag.eng_name).paginate(page, 30, False).items
                 tag_sets = TagSet.query.join(TagSet.sub).filter(
                     TagSet.super_id == super_id,
                     TagSet.is_active == True
-                ).order_by(Tag.eng_name).paginate(page, 30, False).items
+                ).order_by(
+                    Tag.eng_name
+                ).paginate(page, per_page, False).items
                 return tag_sets
             tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
                 TagSet.super_id == super_id,
                 TagSet.is_active == True
             ).order_by(Tag.eng_name).all()
         elif sort_type == 'kor':
+            if page:
+                tag_sets = TagSet.query.join(TagSet.sub).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(
+                    Tag.kor_name
+                ).paginate(page, per_page, False).items
+                return tag_sets
             tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
                 TagSet.super_id == super_id,
                 TagSet.is_active == True
             ).order_by(Tag.kor_name).all()
         elif sort_type == 'jpn':
+            if page:
+                tag_sets = TagSet.query.join(TagSet.sub).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(
+                    Tag.jpn_name
+                ).paginate(page, per_page, False).items
+                return tag_sets
             tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
                 TagSet.super_id == super_id,
                 TagSet.is_active == True
             ).order_by(Tag.jpn_name).all()
         elif sort_type == 'priority':
+            if page:
+                tag_sets = db_session.query(TagSet).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(
+                    TagSet.priority.desc()
+                ).paginate(page, per_page, False).items
+                return tag_sets
             tag_sets = db_session.query(TagSet).filter(
                 TagSet.super_id == super_id,
                 TagSet.is_active == True

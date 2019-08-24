@@ -67,28 +67,32 @@ def fetch_banners():
     return ok(data=banners_js)
 
 
-@api.route('/tag/<int:tag_id>/search', methods=['POST'])
-def search_tags(tag_id=None):
+# @api.route('/tag/<int:tag_id>/search', methods=['POST'])
+@api.route('/tag/<int:tag_id>/search/page/<int:page>', methods=['POST'])
+def search_tags(tag_id=None, page=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    if page is None:
+        return bad_req(_m.EMPTY_PARAM.format('page'))
     result = validate_schema(request.get_json(), _s.search_key_word)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
     super_tag = _h.get_a_tag(tag_id)
     tag_js = _h.convert_a_tag_into_js(super_tag)
-    tags = _h.search_low_div_tags_from_super_div_tag(super_tag, data['key_word'])
+    tags = _h.search_low_div_tags_from_up_div_tag(super_tag,
+                                                  data['key_word'], page)
     tags_js = _h.convert_tags_into_js(tags)
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
 @api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])
-@api.route('/tag/<int:tag_id>/set/<sort_type>/page/<int:page_num>',
+@api.route('/tag/<int:tag_id>/set/<sort_type>/page/<int:page>',
            methods=['GET'])
 @api.route('/tag/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/page/'
-           '<int:page_num>',
+           '<int:page>',
            methods=['GET'])
-def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page_num=None):
+def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
@@ -107,7 +111,7 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page_num=None):
             return ok(dict(tag=tag_js, sub_tags=bookmarks_js))
     if tag.class1 == TagClass.drug and tag.division1 != 0:
         sort_type = 'eng'
-    tag_sets = _h.get_tag_sets(tag.id, sort_type, page_num)
+    tag_sets = _h.get_tag_sets(tag.id, sort_type, page)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
     if avatar_id:
         if (tag.tag_type == TagType.food
