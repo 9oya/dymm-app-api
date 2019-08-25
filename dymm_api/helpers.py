@@ -1,10 +1,9 @@
-import random, datetime, pytz, re
+import random, re
 
 from flask_jwt_extended import create_access_token, create_refresh_token
-from sqlalchemy import text, func, case
+from sqlalchemy import text, func
 
 from dymm_api import b_crypt, db
-# from database import db_session
 from patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
                       BookmarkSuperTag, RegExPatter)
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
@@ -344,9 +343,10 @@ class Helpers(object):
             ).paginate(page, per_page, False).items
         elif super_tag.division2 == 0:
             if super_tag.class1 == TagClass.drug:
+                # TODO: - Need to adjust TagSet
                 drug_tags = Tag.query.filter(
                     Tag.class1 == TagClass.drug_abc,
-                    Tag.division1 == super_tag.division1,
+                    Tag.division1 != 0,
                     Tag.division2 != 0,
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),

@@ -1,11 +1,10 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
-from flask_sqlalchemy import SQLAlchemy
 
 from blueprint import register_blueprint
-# from database import db_session
 from custom_jwt import customize_jwt
 
 app = Flask('dymm_api')
@@ -18,11 +17,6 @@ jwt = JWTManager(app)
 mail = Mail(app)
 register_blueprint(app)
 customize_jwt(jwt)
-
-
-# @app.teardown_appcontext
-# def shutdown_session(exception=None):
-#     db_session.remove()
 
 
 # if __name__ == "__main__":
