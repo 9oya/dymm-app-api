@@ -24,6 +24,9 @@ class Schema:
                 "type": "string",
                 "minLength": 8,
                 "maxLength": 40
+            },
+            "id": {
+                "type": "integer"
             }
         },
         "required": ["email", "password"],

@@ -233,7 +233,13 @@ def auth_existed_avatar():
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
-    avatar = _h.get_a_avatar(email=data['email'])
+    try:
+        avatar_id = data['id']
+        avatar = _h.get_a_avatar(avatar_id=avatar_id)
+        if not avatar:
+            avatar = _h.get_a_avatar(email=data['email'])
+    except KeyError:
+        avatar = _h.get_a_avatar(email=data['email'])
     if not avatar:
         return unauthorized(_e.MAIL_INVALID)
     if not b_crypt.check_password_hash(avatar.password_hash, data['password']):
