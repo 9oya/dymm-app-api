@@ -170,3 +170,13 @@ class Schema:
         "required": ["key_word"],
         "additionalProperties": False
     }
+    mail_conf_link = {
+        "type": "object",
+        "properties": {
+            "avatar_id": {
+                "type": "integer"
+            }
+        },
+        "required": ["avatar_id"],
+        "additionalProperties": False
+    }

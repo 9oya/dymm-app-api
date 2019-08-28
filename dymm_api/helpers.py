@@ -836,20 +836,16 @@ class Helpers(object):
 
     @staticmethod
     def update_avatar_info(avatar_id, target, new_info):
+        avatar = Avatar.query.filter(
+            Avatar.id == avatar_id,
+            Avatar.is_active == True
+        ).first()
         if target == AvatarInfo.first_name:
-            avatar = Avatar.query.filter(
-                Avatar.id == avatar_id,
-                Avatar.is_active == True
-            ).first()
             avatar.first_name = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
         elif target == AvatarInfo.last_name:
-            avatar = Avatar.query.filter(
-                Avatar.id == avatar_id,
-                Avatar.is_active == True
-            ).first()
             avatar.last_name = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
@@ -857,14 +853,15 @@ class Helpers(object):
         elif target == AvatarInfo.intro:
             if new_info == "":
                 new_info = None
-            avatar = Avatar.query.filter(
-                Avatar.id == avatar_id,
-                Avatar.is_active == True
-            ).first()
             avatar.introduction = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
+        elif target == AvatarInfo.email:
+            avatar.email = new_info
+            avatar.is_confirmed = False
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
         else:
             return False
 

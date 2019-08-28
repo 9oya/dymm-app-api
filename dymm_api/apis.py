@@ -44,46 +44,11 @@ def confirm_mail_token_service(token=None):
     )
 
 
-@api.route('<int:avatar_id>/mail/<email>/conf-link', methods=['GET'])
-@jwt_required
-def send_mail_confirm_link_again(avatar_id=None, email=None):
-    if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    if email is None:
-        return bad_req(_m.EMPTY_PARAM.format('email'))
-    if not re.match(_r.EMAIL, email):
-        return bad_req(_m.BAD_PARAM.format('email'))
-    avatar = _h.get_a_avatar(avatar_id=avatar_id)
-    if not avatar:
-        return forbidden(_e.USER_INVALID)
-    send_mail(avatar.email)
-    return ok()
-
-
 @api.route('/banner', methods=['GET'])
 def fetch_banners():
     banners = _h.get_banners()
     banners_js = _h.convert_banners_into_js(banners)
     return ok(data=banners_js)
-
-
-# @api.route('/tag/<int:tag_id>/search', methods=['POST'])
-@api.route('/tag/<int:tag_id>/search/page/<int:page>', methods=['POST'])
-def search_tags(tag_id=None, page=None):
-    if tag_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
-    if page is None:
-        return bad_req(_m.EMPTY_PARAM.format('page'))
-    result = validate_schema(request.get_json(), _s.search_key_word)
-    if not result['ok']:
-        return bad_req(result['message'])
-    data = result['data']
-    super_tag = _h.get_a_tag(tag_id)
-    tag_js = _h.convert_a_tag_into_js(super_tag)
-    tags = _h.search_low_div_tags_from_up_div_tag(super_tag,
-                                                  data['key_word'], page)
-    tags_js = _h.convert_tags_into_js(tags)
-    return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
 @api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])
@@ -272,6 +237,38 @@ def refresh_access_token():
     current_user = get_jwt_identity()
     token = create_access_token(identity=current_user, fresh=False)
     return ok(token)
+
+
+@api.route('/mail/conf-link/<int:avatar_id>', methods=['POST'])
+@jwt_required
+def send_mail_confirm_link_again(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id=avatar_id)
+    if not avatar:
+        # TODO
+        return forbidden(_e.USER_INVALID)
+    send_mail(avatar.email)
+    return ok()
+
+
+# @api.route('/tag/<int:tag_id>/search', methods=['POST'])
+@api.route('/tag/<int:tag_id>/search/page/<int:page>', methods=['POST'])
+def search_tags(tag_id=None, page=None):
+    if tag_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    if page is None:
+        return bad_req(_m.EMPTY_PARAM.format('page'))
+    result = validate_schema(request.get_json(), _s.search_key_word)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    super_tag = _h.get_a_tag(tag_id)
+    tag_js = _h.convert_a_tag_into_js(super_tag)
+    tags = _h.search_low_div_tags_from_up_div_tag(super_tag,
+                                                  data['key_word'], page)
+    tags_js = _h.convert_tags_into_js(tags)
+    return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
 @api.route('/log', methods=['POST'])
