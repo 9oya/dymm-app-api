@@ -34,7 +34,7 @@ class MsgPattern:
     UN_AUTH = 'Unauthorized, Wrong {} has been passed.'
 
 
-class RegExPatter:
+class RegExPattern:
     NUMERIC_ID = '^[0-9]+$'
     EMAIL = '^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$'
     year = '[1960-2200]'

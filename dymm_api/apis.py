@@ -6,15 +6,18 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,
 
 from dymm_api import b_crypt
 from errors import ok, forbidden, bad_req, unauthorized
-from patterns import (MsgPattern, RegExPatter, ErrorPattern, TagType,
+from patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
                       BookmarkSuperTag, TagClass)
 from schemas import Schema, validate_schema
 from mail import confirm_mail_token, send_mail
 from helpers import Helpers, str_to_bool
 
-api = Blueprint('api', __name__, url_prefix='/api')
+avt_api = Blueprint('avt_api', __name__, url_prefix='/api/avatar')
+bnr_api = Blueprint('bnr_api', __name__, url_prefix='/api/banner')
+mail_api = Blueprint('mail_api', __name__, url_prefix='/api/mail')
+tag_api = Blueprint('tag_api', __name__, url_prefix='/api/tag')
 _m = MsgPattern()
-_r = RegExPatter()
+_r = RegExPattern()
 _e = ErrorPattern()
 _h = Helpers()
 _s = Schema()
@@ -22,7 +25,97 @@ _s = Schema()
 
 # GET services
 # -----------------------------------------------------------------------------
-@api.route('/mail/conf/<token>', methods=['GET'])
+@avt_api.route('/<int:avatar_id>', methods=['GET'])
+@jwt_required
+def fetch_a_avatar(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id)
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    return ok(avatar_js)
+
+
+@avt_api.route('/<int:avatar_id>/profile', methods=['GET'])
+@jwt_required
+def fetch_avatar_profile(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id)
+    if not avatar.is_confirmed:
+        return unauthorized(pattern=_e.MAIL_NEED_CONF, message=avatar.email)
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    profile_tags = _h.get_profile_tags(avatar_id)
+    profile_tag_jss = _h.convert_profile_tag_into_js(profile_tags)
+    profile = dict(avatar=avatar_js,
+                   profile_tags=profile_tag_jss)
+    return ok(profile)
+
+
+@avt_api.route('/<int:avatar_id>/cond', methods=['GET'])
+@jwt_required
+def fetch_avatar_cond_list(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avt_cond_list = _h.get_avt_cond_list(avatar_id)
+    avt_cond_list_js = _h.convert_avt_cond_list_into_js(avt_cond_list)
+    return ok(avt_cond_list_js)
+
+
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
+               '<int:week_of_year>', methods=['GET'])
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>',
+               methods=['GET'])
+@jwt_required
+def fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
+                     week_of_year=None):
+    if not avatar_id:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if not year_number:
+        return bad_req(_m.EMPTY_PARAM.format('year_number'))
+    if not month_number:
+        return bad_req(_m.EMPTY_PARAM.format('month_number'))
+    if len(str(year_number)) != 4 or year_number < 1960:
+        return bad_req(_m.BAD_PARAM.format('year_number'))
+    if month_number < 1 or month_number > 12:
+        return bad_req(_m.BAD_PARAM.format('month_number'))
+    if week_of_year:
+        if week_of_year < 1 or week_of_year > 54:
+            return bad_req(_m.BAD_PARAM.format('week_of_year'))
+    log_groups = _h.get_log_groups(avatar_id, year_number, month_number,
+                                   week_of_year)
+    log_groups_js = _h.convert_log_groups_into_js(log_groups)
+    return ok(log_groups_js)
+
+
+@avt_api.route('/group/<int:group_id>/log', methods=['GET'])
+@jwt_required
+def fetch_group_of_logs(group_id=None):
+    if not group_id:
+        return bad_req(_m.EMPTY_PARAM.format('group_id'))
+    log_group = _h.get_a_log_group(group_id)
+    logs_js = dict(group_id=log_group.id)
+    if log_group.food_cnt > 0:
+        food_logs = _h.get_tag_logs(log_group.id, TagType.food)
+        logs_js['food_logs'] = _h.convert_tag_logs_into_js(food_logs)
+    if log_group.act_cnt > 0:
+        act_logs = _h.get_tag_logs(log_group.id, TagType.activity)
+        logs_js['act_logs'] = _h.convert_tag_logs_into_js(act_logs)
+    if log_group.drug_cnt > 0:
+        drug_logs = _h.get_tag_logs(log_group.id, TagType.drug)
+        logs_js['drug_logs'] = _h.convert_tag_logs_into_js(drug_logs)
+    if log_group.has_cond_score:
+        logs_js['cond_score'] = log_group.cond_score
+    return ok(logs_js)
+
+
+@bnr_api.route('', methods=['GET'])
+def fetch_banners():
+    banners = _h.get_banners()
+    banners_js = _h.convert_banners_into_js(banners)
+    return ok(data=banners_js)
+
+
+@mail_api.route('/conf/<token>', methods=['GET'])
 def confirm_mail_token_service(token=None):
     if token is None:
         return bad_req()
@@ -44,19 +137,11 @@ def confirm_mail_token_service(token=None):
     )
 
 
-@api.route('/banner', methods=['GET'])
-def fetch_banners():
-    banners = _h.get_banners()
-    banners_js = _h.convert_banners_into_js(banners)
-    return ok(data=banners_js)
-
-
-@api.route('/tag/<int:tag_id>/set/<sort_type>', methods=['GET'])
-@api.route('/tag/<int:tag_id>/set/<sort_type>/page/<int:page>',
-           methods=['GET'])
-@api.route('/tag/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/page/'
-           '<int:page>',
-           methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/<sort_type>', methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>',
+               methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/'
+               'page/<int:page>', methods=['GET'])
 def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
@@ -90,7 +175,7 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
     return ok(dict(tag=tag_js, sub_tags=tag_sets_js))
 
 
-@api.route('/tag/<int:tag_id>/set/match/<is_selected>', methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/match/<is_selected>', methods=['GET'])
 @jwt_required
 def fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
     if tag_id is None:
@@ -107,93 +192,10 @@ def fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
     return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
 
 
-@api.route('/avatar/<int:avatar_id>/profile', methods=['GET'])
-@jwt_required
-def fetch_avatar_profile(avatar_id=None):
-    if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    avatar = _h.get_a_avatar(avatar_id)
-    if not avatar.is_confirmed:
-        return unauthorized(pattern=_e.MAIL_NEED_CONF, message=avatar.email)
-    avatar_js = _h.convert_a_avatar_into_js(avatar)
-    profile_tags = _h.get_profile_tags(avatar_id)
-    profile_tag_jss = _h.convert_profile_tag_into_js(profile_tags)
-    profile = dict(avatar=avatar_js,
-                   profile_tags=profile_tag_jss)
-    return ok(profile)
-
-
-@api.route('/avatar/<int:avatar_id>', methods=['GET'])
-@jwt_required
-def fetch_a_avatar(avatar_id=None):
-    if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    avatar = _h.get_a_avatar(avatar_id)
-    avatar_js = _h.convert_a_avatar_into_js(avatar)
-    return ok(avatar_js)
-
-
-@api.route('/avatar/<int:avatar_id>/cond', methods=['GET'])
-@jwt_required
-def fetch_avatar_cond_list(avatar_id=None):
-    if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    avt_cond_list = _h.get_avt_cond_list(avatar_id)
-    avt_cond_list_js = _h.convert_avt_cond_list_into_js(avt_cond_list)
-    return ok(avt_cond_list_js)
-
-
-@api.route('/log/group/<int:avatar_id>/<int:year_number>/<int:month_number>/'
-           '<int:week_of_year>', methods=['GET'])
-@api.route('/log/group/<avatar_id>/<int:year_number>/<int:month_number>',
-           methods=['GET'])
-@jwt_required
-def fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
-                     week_of_year=None):
-    if not avatar_id:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    if not year_number:
-        return bad_req(_m.EMPTY_PARAM.format('year_number'))
-    if not month_number:
-        return bad_req(_m.EMPTY_PARAM.format('month_number'))
-    if len(str(year_number)) != 4 or year_number < 1960:
-        return bad_req(_m.BAD_PARAM.format('year_number'))
-    if month_number < 1 or month_number > 12:
-        return bad_req(_m.BAD_PARAM.format('month_number'))
-    if week_of_year:
-        if week_of_year < 1 or week_of_year > 54:
-            return bad_req(_m.BAD_PARAM.format('week_of_year'))
-    log_groups = _h.get_log_groups(avatar_id, year_number, month_number,
-                                   week_of_year)
-    log_groups_js = _h.convert_log_groups_into_js(log_groups)
-    return ok(log_groups_js)
-
-
-@api.route('/log/group/<int:group_id>/tag-log', methods=['GET'])
-@jwt_required
-def fetch_group_of_logs(group_id=None):
-    if not group_id:
-        return bad_req(_m.EMPTY_PARAM.format('group_id'))
-    log_group = _h.get_a_log_group(group_id)
-    logs_js = dict(group_id=log_group.id)
-    if log_group.food_cnt > 0:
-        food_logs = _h.get_tag_logs(log_group.id, TagType.food)
-        logs_js['food_logs'] = _h.convert_tag_logs_into_js(food_logs)
-    if log_group.act_cnt > 0:
-        act_logs = _h.get_tag_logs(log_group.id, TagType.activity)
-        logs_js['act_logs'] = _h.convert_tag_logs_into_js(act_logs)
-    if log_group.drug_cnt > 0:
-        drug_logs = _h.get_tag_logs(log_group.id, TagType.drug)
-        logs_js['drug_logs'] = _h.convert_tag_logs_into_js(drug_logs)
-    if log_group.has_cond_score:
-        logs_js['cond_score'] = log_group.cond_score
-    return ok(logs_js)
-
-
 # POST services
 # -----------------------------------------------------------------------------
-@api.route('/avatar', methods=['POST'])
-def auth_existed_avatar():
+@avt_api.route('/auth', methods=['POST'])
+def auth_old_avatar():
     result = validate_schema(request.get_json(), _s.auth_avatar)
     if not result['ok']:
         return bad_req(result['message'])
@@ -215,7 +217,7 @@ def auth_existed_avatar():
     return ok(auth)
 
 
-@api.route('/avatar/create', methods=['POST'])
+@avt_api.route('/create', methods=['POST'])
 def create_new_avatar():
     result = validate_schema(request.get_json(), _s.create_avatar)
     if not result['ok']:
@@ -231,7 +233,7 @@ def create_new_avatar():
     return ok(auth)
 
 
-@api.route('/avatar/token/refresh', methods=['POST'])
+@avt_api.route('/token/refresh', methods=['POST'])
 @jwt_refresh_token_required
 def refresh_access_token():
     current_user = get_jwt_identity()
@@ -239,39 +241,55 @@ def refresh_access_token():
     return ok(token)
 
 
-@api.route('/mail/conf-link/<int:avatar_id>', methods=['POST'])
+@avt_api.route('/cond', methods=['POST'])
 @jwt_required
-def send_mail_confirm_link_again(avatar_id=None):
-    if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    avatar = _h.get_a_avatar(avatar_id=avatar_id)
-    if not avatar:
-        # TODO
-        return forbidden(_e.USER_INVALID)
-    send_mail(avatar.email)
-    return ok()
-
-
-# @api.route('/tag/<int:tag_id>/search', methods=['POST'])
-@api.route('/tag/<int:tag_id>/search/page/<int:page>', methods=['POST'])
-def search_tags(tag_id=None, page=None):
-    if tag_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
-    if page is None:
-        return bad_req(_m.EMPTY_PARAM.format('page'))
-    result = validate_schema(request.get_json(), _s.search_key_word)
+def post_avatar_cond():
+    result = validate_schema(request.get_json(), _s.create_avatar_cond)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
-    super_tag = _h.get_a_tag(tag_id)
-    tag_js = _h.convert_a_tag_into_js(super_tag)
-    tags = _h.search_low_div_tags_from_up_div_tag(super_tag,
-                                                  data['key_word'], page)
-    tags_js = _h.convert_tags_into_js(tags)
-    return ok(dict(tag=tag_js, sub_tags=tags_js))
+    _h.create_cond_log(data)
+    log_history = _h.get_a_log_history_even_inactive(data['avatar_id'],
+                                                     data['tag_id'])
+    if log_history:
+        _h.update_log_history_date(log_history)
+    else:
+        _h.create_a_log_history(data['avatar_id'], data['tag_id'])
+    return ok()
 
 
-@api.route('/log', methods=['POST'])
+@avt_api.route('/bookmark', methods=['POST'])
+@jwt_required
+def post_bookmark():
+    result = validate_schema(request.get_json(), _s.create_bookmark)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    try:
+        avatar_id = data['avatar_id']
+    except KeyError:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    try:
+        tag_type = data['tag_type']
+    except KeyError:
+        return bad_req(_m.EMPTY_PARAM.format('tag_type'))
+    try:
+        sub_id = data['tag_id']
+    except KeyError:
+        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    bookmark = _h.get_a_bookmark_include_inactive(avatar_id, sub_id)
+    if bookmark:
+        _h.update_bookmark_is_active(bookmark)
+        return ok(message=_m.OK_PUT.format('bookmark'))
+    else:
+        super_id = _h.get_bookmark_super_tag_id(tag_type)
+        if not super_id:
+            return bad_req(_m.BAD_PARAM.format('tag_type'))
+        _h.create_a_bookmark(avatar_id, super_id, sub_id)
+        return ok(message=_m.OK_POST.format('bookmark'))
+
+
+@avt_api.route('/log', methods=['POST'])
 @jwt_required
 def post_new_log():
     result = validate_schema(request.get_json(), _s.create_log)
@@ -288,48 +306,45 @@ def post_new_log():
     return ok()
 
 
-@api.route('/log/cond', methods=['POST'])
+@mail_api.route('/conf-link', methods=['POST'])
 @jwt_required
-def post_cond_log():
-    result = validate_schema(request.get_json(), _s.create_avatar_cond)
+def send_mail_confirm_link_again():
+    result = validate_schema(request.get_json(), _s.mail_conf_link)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
-    _h.create_cond_log(data)
-    log_history = _h.get_a_log_history_even_inactive(data['avatar_id'],
-                                                     data['tag_id'])
-    if log_history:
-        _h.update_log_history_date(log_history)
-    else:
-        _h.create_a_log_history(data['avatar_id'], data['tag_id'])
+    try:
+        avatar_id = data['avatar_id']
+    except KeyError:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id=avatar_id)
+    if not avatar:
+        return forbidden(_e.USER_INVALID)
+    send_mail(avatar.email)
     return ok()
 
 
-@api.route('/avatar/<int:avatar_id>/bookmark/<int:tag_type>/<int:sub_id>',
-           methods=['POST'])
-@jwt_required
-def post_bookmark(avatar_id=None, tag_type=None, sub_id=None):
-    if not avatar_id:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    if not tag_type:
-        return bad_req(_m.EMPTY_PARAM.format('tag_type'))
-    if not sub_id:
-        return bad_req(_m.EMPTY_PARAM.format('sub_id'))
-    bookmark = _h.get_a_bookmark_even_inactive(avatar_id, sub_id)
-    if bookmark:
-        _h.update_bookmark_is_active(bookmark)
-        return ok(message=_m.OK_PUT.format('bookmark'))
-    else:
-        super_id = _h.get_bookmark_super_tag_id(tag_type)
-        if not super_id:
-            return bad_req(_m.BAD_PARAM.format('tag_type'))
-        _h.create_a_bookmark(avatar_id, super_id, sub_id)
-        return ok(message=_m.OK_POST.format('bookmark'))
+@tag_api.route('/<int:tag_id>/search/page/<int:page>', methods=['POST'])
+def search_tags(tag_id=None, page=None):
+    if tag_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    if page is None:
+        return bad_req(_m.EMPTY_PARAM.format('page'))
+    result = validate_schema(request.get_json(), _s.search_key_word)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    super_tag = _h.get_a_tag(tag_id)
+    tag_js = _h.convert_a_tag_into_js(super_tag)
+    tags = _h.search_low_div_tags_from_up_div_tag(super_tag, data['key_word'],
+                                                  page)
+    tags_js = _h.convert_tags_into_js(tags)
+    return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
 # PUT services
 # -----------------------------------------------------------------------------
-@api.route('/avatar', methods=['PUT'])
+@avt_api.route('', methods=['PUT'])
 @jwt_required
 def put_avatar_info():
     result = validate_schema(request.get_json(), _s.update_avatar)
@@ -341,7 +356,7 @@ def put_avatar_info():
     return ok()
 
 
-@api.route('/profile/<int:profile_tag_id>/<int:tag_id>', methods=['PUT'])
+@avt_api.route('/profile/<int:profile_tag_id>/<int:tag_id>', methods=['PUT'])
 @jwt_required
 def put_a_profile_tag(profile_tag_id=None, tag_id=None):
     if profile_tag_id is None:
@@ -356,13 +371,35 @@ def put_a_profile_tag(profile_tag_id=None, tag_id=None):
     return ok()
 
 
-@api.route('/log/group/<int:group_id>/<option>', methods=['PUT'])
+@avt_api.route('/cond/<int:avatar_cond_id>', methods=['PUT'])
 @jwt_required
-def put_cond_score(group_id=None, option=None):
+def put_avatar_cond(avatar_cond_id=None):
+    if avatar_cond_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_cond_id'))
+    avatar_cond = _h.get_a_avatar_cond(avatar_cond_id)
+    _h.update_avatar_cond_is_active(avatar_cond)
+    return ok()
+
+
+@avt_api.route('/<int:avatar_id>/bookmark/<int:bookmark_id>', methods=['PUT'])
+@jwt_required
+def put_bookmark(avatar_id=None, bookmark_id=None):
+    if not avatar_id:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if not bookmark_id:
+        return bad_req(_m.EMPTY_PARAM.format('bookmark_id'))
+    bookmark = _h.get_a_bookmark(bookmark_id)
+    _h.update_bookmark_is_active(bookmark)
+    return ok()
+
+
+@avt_api.route('/group/<int:group_id>/<option>', methods=['PUT'])
+@jwt_required
+def put_log_group(group_id=None, option=None):
     if group_id is None:
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
-    if option == 'cond-score':
+    if option == 'score':
         result = validate_schema(request.get_json(), _s.update_cond_score)
         if not result['ok']:
             return bad_req(result['message'])
@@ -376,36 +413,13 @@ def put_cond_score(group_id=None, option=None):
         return bad_req(_m.BAD_PARAM)
 
 
-@api.route('/log/<int:tag_log_id>', methods=['PUT'])
+@avt_api.route('/log/<int:tag_log_id>', methods=['PUT'])
 @jwt_required
 def put_a_group_of_log(tag_log_id=None):
     if tag_log_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('group_id'))
+        return bad_req(_m.EMPTY_PARAM.format('tag_log_id'))
     tag_log = _h.get_a_tag_log(tag_log_id)
     _h.update_tag_log(tag_log)
     log_group = _h.get_a_log_group(tag_log.group_id)
     _h.update_log_group_log_cnt(log_group, tag_log.tag.tag_type)
-    return ok()
-
-
-@api.route('/avatar/cond/<int:avatar_cond_id>', methods=['PUT'])
-@jwt_required
-def put_a_avatar_cond(avatar_cond_id=None):
-    if avatar_cond_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_cond_id'))
-    avatar_cond = _h.get_a_avatar_cond(avatar_cond_id)
-    _h.update_avatar_cond_is_active(avatar_cond)
-    return ok()
-
-
-@api.route('/avatar/<int:avatar_id>/bookmark/<int:bookmark_id>',
-           methods=['PUT'])
-@jwt_required
-def put_bookmark(avatar_id=None, bookmark_id=None):
-    if not avatar_id:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    if not bookmark_id:
-        return bad_req(_m.EMPTY_PARAM.format('bookmark_id'))
-    bookmark = _h.get_a_bookmark(bookmark_id)
-    _h.update_bookmark_is_active(bookmark)
     return ok()

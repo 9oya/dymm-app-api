@@ -5,12 +5,12 @@ from sqlalchemy import text, func
 
 from dymm_api import b_crypt, db
 from patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
-                      BookmarkSuperTag, RegExPatter)
+                      BookmarkSuperTag, RegExPattern)
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                     ProfileTag, Tag, TagLog, TagSet)
 
 _u = URIPattern()
-_r = RegExPatter
+_r = RegExPattern
 db_session = db.session
 
 
@@ -610,7 +610,7 @@ class Helpers(object):
         return bookmarks
 
     @staticmethod
-    def get_a_bookmark_even_inactive(avatar_id, sub_id):
+    def get_a_bookmark_include_inactive(avatar_id, sub_id):
         bookmark = Bookmark.query.filter(
             Bookmark.avatar_id == avatar_id,
             Bookmark.sub_tag_id == sub_id

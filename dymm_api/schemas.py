@@ -150,6 +150,22 @@ class Schema:
         "required": ["avatar_id", "tag_id", "cond_log_type", "log_date"],
         "additionalProperties": False
     }
+    create_bookmark = {
+        "type": "object",
+        "properties": {
+            "avatar_id": {
+                "type": "integer"
+            },
+            "tag_id": {
+                "type": "integer"
+            },
+            "tag_type": {
+                "type": "integer"
+            }
+        },
+        "required": ["avatar_id", "tag_id", "tag_type"],
+        "additionalProperties": False
+    }
     update_cond_score = {
         "type": "object",
         "properties": {
