@@ -62,6 +62,17 @@ class Schema:
                      "language_id"],
         "additionalProperties": False
     }
+    find_email = {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "format": "email"
+            }
+        },
+        "required": ["email"],
+        "additionalProperties": False
+    }
     update_avatar = {
         "type": "object",
         "properties": {

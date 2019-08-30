@@ -9,7 +9,7 @@ from errors import ok, forbidden, bad_req, unauthorized
 from patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
                       BookmarkSuperTag, TagClass)
 from schemas import Schema, validate_schema
-from mail import confirm_mail_token, send_mail
+from mail import confirm_mail_token, send_conf_mail, send_verif_mail
 from helpers import Helpers, str_to_bool
 
 avt_api = Blueprint('avt_api', __name__, url_prefix='/api/avatar')
@@ -229,7 +229,7 @@ def create_new_avatar():
     _h.create_def_profile_tags(avatar.id, data['language_id'])
     avatar_js = _h.convert_a_avatar_into_js(avatar)
     auth = dict(avatar=avatar_js, language_id=data['language_id'])
-    send_mail(avatar.email)
+    send_conf_mail(avatar.email)
     return ok(auth)
 
 
@@ -239,6 +239,26 @@ def refresh_access_token():
     current_user = get_jwt_identity()
     token = create_access_token(identity=current_user, fresh=False)
     return ok(token)
+
+
+@avt_api.route('/email/<string:option>', methods=['POST'])
+def find_old_email(option=None):
+    result = validate_schema(request.get_json(), _s.find_email)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    try:
+        email = data['email']
+    except KeyError:
+        return bad_req(_m.EMPTY_PARAM.format('email'))
+    if option == 'verif':
+        send_verif_mail(email)
+        return ok()
+    elif option == 'find':
+        if _h.is_email_duplicated(email):
+            return ok()
+        else:
+            return unauthorized(_e.MAIL_INVALID)
 
 
 @avt_api.route('/cond', methods=['POST'])
@@ -320,7 +340,7 @@ def send_mail_confirm_link_again():
     avatar = _h.get_a_avatar(avatar_id=avatar_id)
     if not avatar:
         return forbidden(_e.USER_INVALID)
-    send_mail(avatar.email)
+    send_conf_mail(avatar.email)
     return ok()
 
 
