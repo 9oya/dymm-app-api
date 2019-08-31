@@ -15,6 +15,7 @@ class ErrorPattern:
     USER_INVALID = 31
     MAIL_INVALID = 32
     PASS_INVALID = 33
+    CODE_INVALID = 34
 
 
 class MsgPattern:
@@ -91,3 +92,4 @@ class AvatarInfo:
     ph_number = 14
     intro = 15
     profile_type = 16
+    password = 17

@@ -9,7 +9,8 @@ from errors import ok, forbidden, bad_req, unauthorized
 from patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
                       BookmarkSuperTag, TagClass)
 from schemas import Schema, validate_schema
-from mail import confirm_mail_token, send_conf_mail, send_verif_mail
+from mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
+                  verify_mail_code)
 from helpers import Helpers, str_to_bool
 
 avt_api = Blueprint('avt_api', __name__, url_prefix='/api/avatar')
@@ -243,7 +244,7 @@ def refresh_access_token():
 
 @avt_api.route('/email/<string:option>', methods=['POST'])
 def find_old_email(option=None):
-    result = validate_schema(request.get_json(), _s.find_email)
+    result = validate_schema(request.get_json(), _s.avatar_email)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
@@ -251,14 +252,21 @@ def find_old_email(option=None):
         email = data['email']
     except KeyError:
         return bad_req(_m.EMPTY_PARAM.format('email'))
-    if option == 'verif':
-        send_verif_mail(email)
-        return ok()
-    elif option == 'find':
+    if option == 'find':
         if _h.is_email_duplicated(email):
             return ok()
         else:
             return unauthorized(_e.MAIL_INVALID)
+    if option == 'verify':
+        send_verif_mail(email)
+        return ok()
+    elif option == 'code':
+        if email == verify_mail_code(data['code']):
+            return ok()
+        else:
+            return unauthorized(_e.CODE_INVALID)
+    else:
+        return bad_req(_m.EMPTY_PARAM.format('option'))
 
 
 @avt_api.route('/cond', methods=['POST'])

@@ -862,6 +862,12 @@ class Helpers(object):
             avatar.is_confirmed = False
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
+        elif target == AvatarInfo.password:
+            password_hash = b_crypt.generate_password_hash(new_info).decode(
+                'utf-8')
+            avatar.password_hash = password_hash
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
         else:
             return False
 

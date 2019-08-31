@@ -33,11 +33,8 @@ def confirm_mail_token(token, expiration=36000):
     return email
 
 
-def verify_mail_code(verif_code):
-    if session.pop(verif_code, None):
-        return True
-    else:
-        return False
+def verify_mail_code(verif_code: str):
+    return session.pop(verif_code.lower(), None)
 
 
 def send_conf_mail(mail_address):
