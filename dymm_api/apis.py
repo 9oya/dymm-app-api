@@ -379,8 +379,16 @@ def put_avatar_info():
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
-    _h.update_avatar_info(data['avatar_id'], data['target'],
-                          data['new_info'])
+    try:
+        old_password = data['old_password']
+        avatar = _h.get_a_avatar(data['avatar_id'])
+        if not b_crypt.check_password_hash(avatar.password_hash, old_password):
+            return unauthorized(_e.PASS_INVALID)
+        _h.update_avatar_info(avatar.id, data['target'],
+                              data['new_info'])
+    except KeyError:
+        _h.update_avatar_info(data['avatar_id'], data['target'],
+                              data['new_info'])
     return ok()
 
 

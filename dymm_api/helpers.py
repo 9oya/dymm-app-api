@@ -835,7 +835,7 @@ class Helpers(object):
         return True
 
     @staticmethod
-    def update_avatar_info(avatar_id, target, new_info):
+    def update_avatar_info(avatar_id, target, new_info) -> bool:
         avatar = Avatar.query.filter(
             Avatar.id == avatar_id,
             Avatar.is_active == True
@@ -862,12 +862,14 @@ class Helpers(object):
             avatar.is_confirmed = False
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
+            return True
         elif target == AvatarInfo.password:
             password_hash = b_crypt.generate_password_hash(new_info).decode(
                 'utf-8')
             avatar.password_hash = password_hash
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
+            return True
         else:
             return False
 

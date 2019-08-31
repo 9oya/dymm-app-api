@@ -89,6 +89,9 @@ class Schema:
             },
             "new_info": {
                 "type": "string"
+            },
+            "old_password": {
+                "type": "string"
             }
         },
         "required": ["avatar_id", "target", "new_info"],
