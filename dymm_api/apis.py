@@ -109,6 +109,33 @@ def fetch_group_of_logs(group_id=None):
     return ok(logs_js)
 
 
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
+               'avg-score', methods=['GET'])
+@jwt_required
+def fetch_log_group_avg_cond_score_per_month(avatar_id=None, year_number=None,
+                                             month_number=None):
+    this_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
+    if month_number == 1:
+        year_number -= year_number
+        month_number = 12
+    else:
+        month_number -= 1
+    last_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
+
+    if this_avg.avg_score is None:
+        this_avg = "0.000"
+    else:
+        this_avg = str(this_avg.avg_score)
+    if last_avg.avg_score is None:
+        last_avg = "0.000"
+    else:
+        last_avg = str(last_avg.avg_score)
+    return ok(dict(
+        this_month_score=this_avg,
+        last_month_score=last_avg
+    ))
+
+
 @bnr_api.route('', methods=['GET'])
 def fetch_banners():
     banners = _h.get_banners()
@@ -430,17 +457,14 @@ def put_bookmark(avatar_id=None, bookmark_id=None):
 
 
 @avt_api.route('/group/<int:group_id>/<option>', methods=['PUT'])
+@avt_api.route('/group/<int:group_id>/<option>/<value>', methods=['PUT'])
 @jwt_required
-def put_log_group(group_id=None, option=None):
+def put_log_group(group_id=None, option=None, value=None):
     if group_id is None:
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
     if option == 'score':
-        result = validate_schema(request.get_json(), _s.update_cond_score)
-        if not result['ok']:
-            return bad_req(result['message'])
-        data = result['data']
-        _h.update_log_group_cond_score(log_group, data)
+        _h.update_log_group_cond_score(log_group, value)
         return ok()
     elif option == 'remove':
         _h.update_log_group_is_active(log_group)

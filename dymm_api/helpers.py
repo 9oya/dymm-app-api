@@ -488,6 +488,18 @@ class Helpers(object):
         return log_groups
 
     @staticmethod
+    def get_avg_score_per_month(avatar_id, year_number, month_number):
+        avg_score = LogGroup.query.with_entities(
+            func.avg(LogGroup.cond_score).label('avg_score')
+        ).filter(
+            LogGroup.avatar_id == avatar_id,
+            LogGroup.year_number == year_number,
+            LogGroup.month_number == month_number,
+            LogGroup.is_active == True
+        ).first()
+        return avg_score
+
+    @staticmethod
     def get_tag_logs(group_id, tag_type) -> [TagLog]:
         tag_logs = db_session.query(
             TagLog
@@ -882,8 +894,8 @@ class Helpers(object):
         return True
 
     @staticmethod
-    def update_log_group_cond_score(log_group: LogGroup, data):
-        log_group.cond_score = data['cond_score']
+    def update_log_group_cond_score(log_group: LogGroup, score):
+        log_group.cond_score = score
         log_group.has_cond_score = True
         db_session.commit()
         return True
