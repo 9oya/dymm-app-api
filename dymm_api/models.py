@@ -1,5 +1,5 @@
 from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Integer,
-                        SmallInteger, String, text)
+                        SmallInteger, String, text, Text)
 from sqlalchemy.orm import relationship
 from dymm_api import db
 
@@ -28,7 +28,7 @@ class Avatar(Base):
 class Banner(Base):
     __tablename__ = 'banner'
 
-    id = Column(Integer, primary_key=True, server_default=text("nextval('banner_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True)
     is_active = Column(Boolean, nullable=False)
     priority = Column(SmallInteger, nullable=False, server_default=text("0"))
     eng_title = Column(String(200))
@@ -38,10 +38,10 @@ class Banner(Base):
     kor_subtitle = Column(String(300))
     jpn_subtitle = Column(String(300))
     img_name = Column(String(100))
+    txt_color = Column(String(100))
+    bg_color = Column(String(100))
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
-    bg_color = Column(String(100))
-    txt_color = Column(String(100))
 
 
 class Tag(Base):
@@ -123,13 +123,15 @@ class LogGroup(Base):
     group_type = Column(SmallInteger, nullable=False, comment='1: Morning, 2: Daytime, 3: Evening, 4: Nighttime')
     is_active = Column(Boolean, nullable=False)
     log_date = Column(Date)
+    food_cnt = Column(SmallInteger, nullable=False)
+    act_cnt = Column(SmallInteger, nullable=False)
+    drug_cnt = Column(SmallInteger, nullable=False)
     has_cond_score = Column(Boolean, nullable=False)
     cond_score = Column(SmallInteger)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
-    food_cnt = Column(SmallInteger, nullable=False)
-    act_cnt = Column(SmallInteger, nullable=False)
-    drug_cnt = Column(SmallInteger, nullable=False)
+    note = Column(Text)
+    has_note = Column(Boolean, nullable=False)
 
     avatar = relationship('Avatar')
 
@@ -182,7 +184,7 @@ class TagSet(Base):
 class TagLog(Base):
     __tablename__ = 'tag_log'
 
-    id = Column(Integer, primary_key=True, server_default=text("nextval('tag_log_id_seq'::regclass)"))
+    id = Column(Integer, primary_key=True)
     group_id = Column(ForeignKey('log_group.id', ondelete='CASCADE'), nullable=False, index=True)
     tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
     is_active = Column(Boolean, nullable=False)
