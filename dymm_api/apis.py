@@ -121,7 +121,6 @@ def fetch_log_group_avg_cond_score_per_month(avatar_id=None, year_number=None,
     else:
         month_number -= 1
     last_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
-
     if this_avg.avg_score is None:
         this_avg = "0.000"
     else:
