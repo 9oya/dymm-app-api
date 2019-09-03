@@ -185,14 +185,17 @@ class Schema:
         "required": ["avatar_id", "tag_id", "tag_type"],
         "additionalProperties": False
     }
-    update_cond_score = {
+    update_log_group = {
         "type": "object",
         "properties": {
             "cond_score": {
                 "type": "integer"
+            },
+            "note_txt": {
+                "type": "string"
             }
         },
-        "required": ["cond_score"],
+        "required": [],
         "additionalProperties": False
     }
     search_key_word = {

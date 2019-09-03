@@ -456,17 +456,23 @@ def put_bookmark(avatar_id=None, bookmark_id=None):
 
 
 @avt_api.route('/group/<int:group_id>/<option>', methods=['PUT'])
-@avt_api.route('/group/<int:group_id>/<option>/<value>', methods=['PUT'])
 @jwt_required
-def put_log_group(group_id=None, option=None, value=None):
+def put_log_group(group_id=None, option=None):
     if group_id is None:
         return bad_req(_m.EMPTY_PARAM.format('group_id'))
     log_group = _h.get_a_log_group(group_id)
-    if option == 'score':
-        _h.update_log_group_cond_score(log_group, value)
-        return ok()
-    elif option == 'remove':
+    if option == 'remove':
         _h.update_log_group_is_active(log_group)
+        return ok()
+    result = validate_schema(request.get_json(), _s.update_log_group)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    if option == 'score':
+        _h.update_log_group_cond_score(log_group, data['cond_score'])
+        return ok()
+    elif option == 'note':
+        _h.update_log_group_note(log_group, data['note_txt'])
         return ok()
     else:
         return bad_req(_m.BAD_PARAM)

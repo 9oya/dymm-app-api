@@ -145,7 +145,9 @@ class Helpers(object):
                 act_cnt=log_group.act_cnt,
                 drug_cnt=log_group.drug_cnt,
                 has_cond_score=log_group.has_cond_score,
-                cond_score=log_group.cond_score
+                has_note=log_group.has_note,
+                cond_score=log_group.cond_score,
+                note=log_group.note
             )
             _js_list.append(_js)
         return _js_list
@@ -697,7 +699,6 @@ class Helpers(object):
             food_cnt = 0
             act_cnt = 0
             drug_cnt = 0
-            has_cond_score = False
             if tag.tag_type == TagType.food:
                 food_cnt = 1
             elif tag.tag_type == TagType.activity:
@@ -716,7 +717,8 @@ class Helpers(object):
                 food_cnt=food_cnt,
                 act_cnt=act_cnt,
                 drug_cnt=drug_cnt,
-                has_cond_score=has_cond_score
+                has_cond_score=False,
+                has_note=False
             )
             db_session.add(new_log_group)
             db_session.commit()
@@ -897,6 +899,15 @@ class Helpers(object):
     def update_log_group_cond_score(log_group: LogGroup, score):
         log_group.cond_score = score
         log_group.has_cond_score = True
+        db_session.commit()
+        return True
+
+    @staticmethod
+    def update_log_group_note(log_group: LogGroup, note: str):
+        if len(note) <= 0:
+            note = None
+        log_group.note = note
+        log_group.has_note = True
         db_session.commit()
         return True
 
