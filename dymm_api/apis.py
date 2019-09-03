@@ -88,6 +88,17 @@ def fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
     return ok(log_groups_js)
 
 
+@avt_api.route('/<int:avatar_id>/group-note/<int:page>')
+def fetch_log_group_notes(avatar_id=None, page=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if page is None:
+        bad_req(_m.EMPTY_PARAM.format('page'))
+    log_groups = _h.get_log_group_notes(avatar_id, page)
+    log_groups_js = _h.convert_log_groups_into_js(log_groups)
+    return ok(log_groups_js)
+
+
 @avt_api.route('/group/<int:group_id>/log', methods=['GET'])
 @jwt_required
 def fetch_group_of_logs(group_id=None):
@@ -104,7 +115,7 @@ def fetch_group_of_logs(group_id=None):
     if log_group.drug_cnt > 0:
         drug_logs = _h.get_tag_logs(log_group.id, TagType.drug)
         logs_js['drug_logs'] = _h.convert_tag_logs_into_js(drug_logs)
-    if log_group.has_cond_score:
+    if log_group.cond_score is not None:
         logs_js['cond_score'] = log_group.cond_score
     return ok(logs_js)
 

@@ -490,6 +490,19 @@ class Helpers(object):
         return log_groups
 
     @staticmethod
+    def get_log_group_notes(avatar_id, page=None, per_page=40):
+        log_groups = LogGroup.query.filter(
+            LogGroup.avatar_id == avatar_id,
+            LogGroup.note != None,
+            LogGroup.has_note == True,
+            LogGroup.is_active == True
+        ).order_by(
+            LogGroup.year_number,
+            LogGroup.day_of_year
+        ).paginate(page, per_page, False).items
+        return log_groups
+
+    @staticmethod
     def get_avg_score_per_month(avatar_id, year_number, month_number):
         avg_score = LogGroup.query.with_entities(
             func.avg(LogGroup.cond_score).label('avg_score')
