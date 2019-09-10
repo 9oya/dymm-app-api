@@ -1,5 +1,5 @@
 from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Integer,
-                        SmallInteger, String, text, Text)
+                        SmallInteger, String, text, Text, CHAR)
 from sqlalchemy.orm import relationship
 from dymm_api import db
 
@@ -23,6 +23,7 @@ class Avatar(Base):
     introduction = Column(String(200))
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
+    date_of_birth = Column(CHAR(10))
 
 
 class Banner(Base):
@@ -126,12 +127,10 @@ class LogGroup(Base):
     food_cnt = Column(SmallInteger, nullable=False)
     act_cnt = Column(SmallInteger, nullable=False)
     drug_cnt = Column(SmallInteger, nullable=False)
-    has_cond_score = Column(Boolean, nullable=False)
     cond_score = Column(SmallInteger)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
     note = Column(Text)
-    has_note = Column(Boolean, nullable=False)
 
     avatar = relationship('Avatar')
 

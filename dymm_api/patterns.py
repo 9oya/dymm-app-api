@@ -74,7 +74,11 @@ class TagId:
     cond = 3
     drug = 4
     food = 5
+    profile = 19
+    language = 20
     supp = 1040
+    date_of_birth = 23
+    password = 14641
 
 
 class BookmarkSuperTag:
@@ -92,4 +96,3 @@ class AvatarInfo:
     ph_number = 14
     intro = 15
     profile_type = 16
-    password = 17

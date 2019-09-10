@@ -5,7 +5,7 @@ from sqlalchemy import text, func
 
 from dymm_api import b_crypt, db
 from patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
-                      BookmarkSuperTag, RegExPattern)
+                      BookmarkSuperTag, RegExPattern, TagId)
 from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                     ProfileTag, Tag, TagLog, TagSet)
 
@@ -95,6 +95,7 @@ class Helpers(object):
             ph_number=avatar.ph_number,
             profile_type=avatar.profile_type,
             introudction=avatar.introduction,
+            date_of_birth=avatar.date_of_birth,
             access_token=create_access_token(
                 identity=dict(email=avatar.email), fresh=True
             ),
@@ -144,8 +145,6 @@ class Helpers(object):
                 food_cnt=log_group.food_cnt,
                 act_cnt=log_group.act_cnt,
                 drug_cnt=log_group.drug_cnt,
-                has_cond_score=log_group.has_cond_score,
-                has_note=log_group.has_note,
                 cond_score=log_group.cond_score,
                 note=log_group.note
             )
@@ -490,15 +489,14 @@ class Helpers(object):
         return log_groups
 
     @staticmethod
-    def get_log_group_notes(avatar_id, page=None, per_page=40):
+    def get_log_group_notes(avatar_id, page=None, per_page=20):
         log_groups = LogGroup.query.filter(
             LogGroup.avatar_id == avatar_id,
             LogGroup.note != None,
-            LogGroup.has_note == True,
             LogGroup.is_active == True
         ).order_by(
             LogGroup.year_number,
-            LogGroup.day_of_year
+            LogGroup.day_of_year.desc()
         ).paginate(page, per_page, False).items
         return log_groups
 
@@ -730,8 +728,6 @@ class Helpers(object):
                 food_cnt=food_cnt,
                 act_cnt=act_cnt,
                 drug_cnt=drug_cnt,
-                has_cond_score=False,
-                has_note=False
             )
             db_session.add(new_log_group)
             db_session.commit()
@@ -809,11 +805,10 @@ class Helpers(object):
 
     @staticmethod
     def create_def_profile_tags(avatar_id, language_id):
-        tag_sets = Helpers.get_tag_sets(super_id=19, sort_type='priority')
-        # ID-19: Profile
+        tag_sets = Helpers.get_tag_sets(super_id=TagId.profile,
+                                        sort_type='priority')
         for tag_set in tag_sets:
-            if tag_set.sub_id == 20:
-                # ID-20: Language
+            if tag_set.sub_id == TagId.language:
                 Helpers.create_profile_tag(avatar_id=avatar_id,
                                            tag_id=language_id,
                                            is_selected=True,
@@ -890,10 +885,15 @@ class Helpers(object):
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
-        elif target == AvatarInfo.password:
+        elif target == TagId.password:
             password_hash = b_crypt.generate_password_hash(new_info).decode(
                 'utf-8')
             avatar.password_hash = password_hash
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
+            return True
+        elif target == TagId.date_of_birth:
+            avatar.date_of_birth = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
@@ -911,7 +911,6 @@ class Helpers(object):
     @staticmethod
     def update_log_group_cond_score(log_group: LogGroup, score):
         log_group.cond_score = score
-        log_group.has_cond_score = True
         db_session.commit()
         return True
 
@@ -920,7 +919,6 @@ class Helpers(object):
         if len(note) <= 0:
             note = None
         log_group.note = note
-        log_group.has_note = True
         db_session.commit()
         return True
 
