@@ -12,7 +12,6 @@ setup(
         'Flask-SQLAlchemy',
         'psycopg2-binary',
         'pytz',
-        'raven',
         'jsonschema',
         'Flask-Bcrypt',
         'Flask-JWT-Extended',
