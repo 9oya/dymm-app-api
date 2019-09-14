@@ -1,5 +1,5 @@
-from patterns import ErrorPattern
-from errors import forbidden
+from .patterns import ErrorPattern
+from .errors import forbidden
 
 _e = ErrorPattern()
 

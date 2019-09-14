@@ -4,10 +4,10 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import text, func
 
 from dymm_api import b_crypt, db
-from patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
-                      BookmarkSuperTag, RegExPattern, TagId)
-from models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
-                    ProfileTag, Tag, TagLog, TagSet)
+from .patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
+                       BookmarkSuperTag, RegExPattern, TagId)
+from .models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
+                     ProfileTag, Tag, TagLog, TagSet)
 
 _u = URIPattern()
 _r = RegExPattern

@@ -5,13 +5,13 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,
                                 jwt_refresh_token_required, jwt_required)
 
 from dymm_api import b_crypt
-from errors import ok, forbidden, bad_req, unauthorized
-from patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
-                      BookmarkSuperTag, TagClass)
-from schemas import Schema, validate_schema
-from mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
-                  verify_mail_code)
-from helpers import Helpers, str_to_bool
+from .errors import ok, forbidden, bad_req, unauthorized
+from .patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
+                       BookmarkSuperTag, TagClass)
+from .schemas import Schema, validate_schema
+from .mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
+                   verify_mail_code)
+from .helpers import Helpers, str_to_bool
 
 avt_api = Blueprint('avt_api', __name__, url_prefix='/api/avatar')
 bnr_api = Blueprint('bnr_api', __name__, url_prefix='/api/banner')

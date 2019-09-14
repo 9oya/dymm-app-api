@@ -1,7 +1,5 @@
 from flask import Blueprint
 
-from dymm_api import app
-
 test_view = Blueprint('test_view', __name__, url_prefix='')
 
 

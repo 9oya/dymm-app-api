@@ -4,8 +4,8 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 
-from blueprint import register_blueprint
-from custom_jwt import customize_jwt
+from .blueprint import register_blueprint
+from .custom_jwt import customize_jwt
 
 app = Flask('dymm_api')
 app.config.from_object('dymm_api.config.ProductionConfig')

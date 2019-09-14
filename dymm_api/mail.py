@@ -5,7 +5,7 @@ from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 
 from dymm_api import app, mail
-from patterns import URIPattern
+from .patterns import URIPattern
 
 _u = URIPattern()
 
