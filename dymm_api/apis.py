@@ -1,5 +1,3 @@
-import re
-
 from flask import request, render_template, Blueprint
 from flask_jwt_extended import (create_access_token, get_jwt_identity,
                                 jwt_refresh_token_required, jwt_required)
@@ -345,13 +343,13 @@ def post_bookmark():
     bookmark = _h.get_a_bookmark_include_inactive(avatar_id, sub_id)
     if bookmark:
         _h.update_bookmark_is_active(bookmark)
-        return ok(message=_m.OK_PUT.format('bookmark'))
+        return ok(bookmark.id)
     else:
         super_id = _h.get_bookmark_super_tag_id(tag_type)
         if not super_id:
             return bad_req(_m.BAD_PARAM.format('tag_type'))
-        _h.create_a_bookmark(avatar_id, super_id, sub_id)
-        return ok(message=_m.OK_POST.format('bookmark'))
+        bookmark_id = _h.create_a_bookmark(avatar_id, super_id, sub_id)
+        return ok(bookmark_id)
 
 
 @avt_api.route('/log', methods=['POST'])

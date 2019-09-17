@@ -830,7 +830,7 @@ class Helpers(object):
         )
         db_session.add(bookmark)
         db_session.commit()
-        return True
+        return bookmark.id
 
     @staticmethod
     def create_a_log_history(avatar_id, tag_id):
