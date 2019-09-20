@@ -199,6 +199,7 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
         sort_type = 'eng'
     tag_sets = _h.get_tag_sets(tag.id, sort_type, page)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
+    bookmarks_total = _h.get_bookmarks_total(tag_id)
     if avatar_id:
         if (tag.tag_type == TagType.food
                 or tag.tag_type == TagType.activity
@@ -207,8 +208,10 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
             bookmark = _h.get_a_bookmark(avatar_id=avatar_id, tag_id=tag_id)
             if bookmark:
                 return ok(dict(tag=tag_js, sub_tags=tag_sets_js,
-                               bookmark_id=bookmark.id))
-    return ok(dict(tag=tag_js, sub_tags=tag_sets_js))
+                               bookmark_id=bookmark.id,
+                               bookmarks_total=bookmarks_total))
+    return ok(dict(tag=tag_js, sub_tags=tag_sets_js,
+                   bookmarks_total=bookmarks_total))
 
 
 @tag_api.route('/<int:tag_id>/set/match/<is_selected>', methods=['GET'])
@@ -343,13 +346,14 @@ def post_bookmark():
     bookmark = _h.get_a_bookmark_include_inactive(avatar_id, sub_id)
     if bookmark:
         _h.update_bookmark_is_active(bookmark)
-        return ok(bookmark.id)
+        bookmark_id = bookmark.id
     else:
         super_id = _h.get_bookmark_super_tag_id(tag_type)
         if not super_id:
             return bad_req(_m.BAD_PARAM.format('tag_type'))
         bookmark_id = _h.create_a_bookmark(avatar_id, super_id, sub_id)
-        return ok(bookmark_id)
+    bookmarks_total = _h.get_bookmarks_total(sub_id)
+    return ok(dict(bookmark_id=bookmark_id, bookmarks_total=bookmarks_total))
 
 
 @avt_api.route('/log', methods=['POST'])
@@ -461,7 +465,8 @@ def put_bookmark(avatar_id=None, bookmark_id=None):
         return bad_req(_m.EMPTY_PARAM.format('bookmark_id'))
     bookmark = _h.get_a_bookmark(bookmark_id)
     _h.update_bookmark_is_active(bookmark)
-    return ok()
+    bookmarks_total = _h.get_bookmarks_total(bookmark.sub_tag_id)
+    return ok(bookmarks_total)
 
 
 @avt_api.route('/group/<int:group_id>/<option>', methods=['PUT'])

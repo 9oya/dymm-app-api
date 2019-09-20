@@ -626,6 +626,14 @@ class Helpers(object):
             return False
 
     @staticmethod
+    def get_bookmarks_total(tag_id: int) -> int:
+        bookmarks = Bookmark.query.filter(
+            Bookmark.sub_tag_id == tag_id,
+            Bookmark.is_active == True
+        ).all()
+        return len(bookmarks)
+
+    @staticmethod
     def get_bookmarks(avatar_id, super_id):
         bookmarks = Bookmark.query.filter(
             Bookmark.avatar_id == avatar_id,
