@@ -1,4 +1,4 @@
-import random, re
+import os, random, re
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import text, func
@@ -851,6 +851,11 @@ class Helpers(object):
         db_session.add(log_history)
         db_session.commit()
 
+    @staticmethod
+    def upload_single_file(file, location, filename):
+        file.save(os.path.join(location, filename))
+        return True
+
     # UPDATE methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -893,6 +898,11 @@ class Helpers(object):
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
+        elif target == AvatarInfo.profile_type:
+            avatar.profile_type = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
+            return True
         elif target == TagId.password:
             password_hash = b_crypt.generate_password_hash(new_info).decode(
                 'utf-8')
@@ -905,6 +915,7 @@ class Helpers(object):
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
+
         else:
             return False
 

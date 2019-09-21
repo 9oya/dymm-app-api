@@ -5,7 +5,7 @@ from flask_jwt_extended import (create_access_token, get_jwt_identity,
 from dymm_api import b_crypt
 from .errors import ok, forbidden, bad_req, unauthorized
 from .patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
-                       BookmarkSuperTag, TagClass)
+                       BookmarkSuperTag, TagClass, TagId, AvatarInfo)
 from .schemas import Schema, validate_schema
 from .mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
                    verify_mail_code)
@@ -31,6 +31,9 @@ def fetch_a_avatar(avatar_id=None):
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
+    if avatar.profile_type == 99:
+        avatar_js['photo_url'] = '/static/avatar/profile/photo-{0}.png'.format(
+            avatar_id)
     return ok(avatar_js)
 
 
@@ -43,6 +46,9 @@ def fetch_avatar_profile(avatar_id=None):
     if not avatar.is_confirmed:
         return unauthorized(pattern=_e.MAIL_NEED_CONF, message=avatar.email)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
+    if avatar.profile_type == 99:
+        avatar_js['photo_url'] = '/static/avatar/profile/photo-{0}.png'.format(
+            avatar_id)
     profile_tags = _h.get_profile_tags(avatar_id)
     profile_tag_jss = _h.convert_profile_tag_into_js(profile_tags)
     profile = dict(avatar=avatar_js,
@@ -409,6 +415,21 @@ def search_tags(tag_id=None, page=None):
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
+@avt_api.route('/<int:avatar_id>/profile-img', methods=['POST'])
+def upload_profile_image(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return bad_req(_m.EMPTY_PARAM.format('file'))
+        file = request.files['file']
+        filename = 'photo-{0}.png'.format(str(avatar_id))
+        location = "dymm_api/static/avatar/profile"
+        _h.upload_single_file(file, location, filename)
+        _h.update_avatar_info(avatar_id, AvatarInfo.profile_type, 99)
+        return ok()
+
+
 # PUT services
 # -----------------------------------------------------------------------------
 @avt_api.route('', methods=['PUT'])
@@ -439,7 +460,7 @@ def put_a_profile_tag(profile_tag_id=None, tag_id=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('new_fact_id'))
     is_selected = True
-    if _h.is_x_super_got_y_sub(19, tag_id):
+    if _h.is_x_super_got_y_sub(TagId.profile, tag_id):
         is_selected = False
     profile_tag = _h.get_a_profile_tag(profile_tag_id)
     _h.update_profile_tag(profile_tag, tag_id, is_selected)
