@@ -93,7 +93,8 @@ class Helpers(object):
             first_name=avatar.first_name,
             last_name=avatar.last_name,
             ph_number=avatar.ph_number,
-            profile_type=avatar.profile_type,
+            color_code=avatar.color_code,
+            photo_name=avatar.photo_name,
             introudction=avatar.introduction,
             date_of_birth=avatar.date_of_birth,
             access_token=create_access_token(
@@ -698,7 +699,7 @@ class Helpers(object):
                 password_hash=password_hash,
                 first_name=data['first_name'],
                 last_name=data['last_name'],
-                profile_type=Helpers.gen_random_profile_color()
+                color_code=Helpers.gen_random_profile_color()
             )
             db_session.add(avatar)
             db_session.commit()
@@ -898,11 +899,15 @@ class Helpers(object):
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
-        elif target == AvatarInfo.profile_type:
-            avatar.profile_type = new_info
+        elif target == AvatarInfo.color_code:
+            avatar.color_code = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
+        elif target == AvatarInfo.photo_name:
+            avatar.photo_name = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
         elif target == TagId.password:
             password_hash = b_crypt.generate_password_hash(new_info).decode(
                 'utf-8')
@@ -915,7 +920,6 @@ class Helpers(object):
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True
-
         else:
             return False
 

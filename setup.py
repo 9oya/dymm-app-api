@@ -16,6 +16,7 @@ setup(
         'Flask-Bcrypt',
         'Flask-JWT-Extended',
         'Flask-Mail',
-        'sqlacodegen'
+        'sqlacodegen',
+        'google-cloud-storage'
     ]
 )

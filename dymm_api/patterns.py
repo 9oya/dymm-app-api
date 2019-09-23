@@ -95,4 +95,5 @@ class AvatarInfo:
     email = 13
     ph_number = 14
     intro = 15
-    profile_type = 16
+    color_code = 16
+    photo_name = 17

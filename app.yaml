@@ -1,6 +1,7 @@
 runtime: python37
 
 env_variables:
+  CLOUD_STORAGE_BUCKET: dymm-api-01.appspot.com
   # Replace user, password, database, and instance connection name with the values obtained
   # when configuring your Cloud SQL instance.
   SQLALCHEMY_DATABASE_URI: >-

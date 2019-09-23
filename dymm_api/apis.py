@@ -1,6 +1,9 @@
-from flask import request, render_template, Blueprint
+import os, datetime, pytz
+from flask import request, render_template, Blueprint, send_file, send_from_directory
 from flask_jwt_extended import (create_access_token, get_jwt_identity,
                                 jwt_refresh_token_required, jwt_required)
+from google.cloud import storage
+import tempfile
 
 from dymm_api import b_crypt
 from .errors import ok, forbidden, bad_req, unauthorized
@@ -31,9 +34,9 @@ def fetch_a_avatar(avatar_id=None):
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
-    if avatar.profile_type == 99:
-        avatar_js['photo_url'] = '/static/avatar/profile/photo-{0}.png'.format(
-            avatar_id)
+    # if avatar.color_code == 99:
+    #     avatar_js['photo_url'] = '/avatar/profile/photo-{0}.png'.format(
+    #         avatar_id)
     return ok(avatar_js)
 
 
@@ -46,9 +49,9 @@ def fetch_avatar_profile(avatar_id=None):
     if not avatar.is_confirmed:
         return unauthorized(pattern=_e.MAIL_NEED_CONF, message=avatar.email)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
-    if avatar.profile_type == 99:
-        avatar_js['photo_url'] = '/static/avatar/profile/photo-{0}.png'.format(
-            avatar_id)
+    # if avatar.color_code == 99:
+    #     avatar_js['photo_url'] = '/avatar/profile/photo-{0}.png'.format(
+    #         avatar_id)
     profile_tags = _h.get_profile_tags(avatar_id)
     profile_tag_jss = _h.convert_profile_tag_into_js(profile_tags)
     profile = dict(avatar=avatar_js,
@@ -237,6 +240,23 @@ def fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
     return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
 
 
+@avt_api.route('/<int:avatar_id>/profile/photo/<photo_name>')
+def download_blob(avatar_id=None, photo_name=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    client = storage.Client()
+    bucket = client.get_bucket(os.environ['CLOUD_STORAGE_BUCKET'])
+    pathname = 'avatar/profile/'
+    filename = photo_name
+    blob = bucket.blob(pathname + filename)
+    # blob.download_to_filename(filename)
+    # return f'{filename} downloaded from bucket.'
+    # return send_file(filename, attachment_filename=path + filename)
+    with tempfile.NamedTemporaryFile() as temp:
+        blob.download_to_filename(temp.name)
+        return send_file(temp.name, attachment_filename=filename)
+
+
 # POST services
 # -----------------------------------------------------------------------------
 @avt_api.route('/auth', methods=['POST'])
@@ -415,19 +435,51 @@ def search_tags(tag_id=None, page=None):
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
+# @avt_api.route('/<int:avatar_id>/profile-img', methods=['POST'])
+# def upload_profile_image1(avatar_id=None):
+#     if avatar_id is None:
+#         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+#     if request.method == 'POST':
+#         if 'file' not in request.files:
+#             return bad_req(_m.EMPTY_PARAM.format('file'))
+#         file = request.files['file']
+#         filename = 'photo-{0}.png'.format(str(avatar_id))
+#         location = "dymm_api/static/avatar/profile"
+#         _h.upload_single_file(file, location, filename)
+#         _h.update_avatar_info(avatar_id, AvatarInfo.color_code, 99)
+#         return ok()
+
+
 @avt_api.route('/<int:avatar_id>/profile-img', methods=['POST'])
 def upload_profile_image(avatar_id=None):
+    """Process the uploaded file and upload it to Google Cloud Storage."""
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return bad_req(_m.EMPTY_PARAM.format('file'))
-        file = request.files['file']
-        filename = 'photo-{0}.png'.format(str(avatar_id))
-        location = "dymm_api/static/avatar/profile"
-        _h.upload_single_file(file, location, filename)
-        _h.update_avatar_info(avatar_id, AvatarInfo.profile_type, 99)
-        return ok()
+    uploaded_file = request.files.get('file')
+    if not uploaded_file:
+        return bad_req(_m.EMPTY_PARAM.format('file'))
+
+    # Create a Cloud Storage client.
+    gcs = storage.Client()
+
+    # Get the bucket that the file will be uploaded to.
+    bucket = gcs.get_bucket(os.environ['CLOUD_STORAGE_BUCKET'])
+
+    # Create a new blob and upload the file's content.
+    # blob = bucket.blob(uploaded_file.filename)
+    str_date = datetime.datetime.now(tz=pytz.utc).strftime('%Y%m%d-%H%M%S')
+    path_name = 'avatar/profile/'
+    file_name = '{0}-{1}.png'.format(str(avatar_id), str_date)
+    blob = bucket.blob(path_name + file_name)
+    blob.upload_from_string(
+        uploaded_file.read(),
+        content_type=uploaded_file.content_type
+    )
+    _h.update_avatar_info(avatar_id, AvatarInfo.photo_name, file_name)
+    _h.update_avatar_info(avatar_id, AvatarInfo.color_code, 0)
+    # The public URL can be used to directly access the uploaded file via HTTP.
+    print(blob.public_url)
+    return blob.public_url
 
 
 # PUT services
