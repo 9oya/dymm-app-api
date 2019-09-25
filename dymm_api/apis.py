@@ -129,16 +129,29 @@ def fetch_group_of_logs(group_id=None):
 
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
                'avg-score', methods=['GET'])
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
+               '<int:week_of_year>/avg-score', methods=['GET'])
 @jwt_required
 def fetch_log_group_avg_cond_score_per_month(avatar_id=None, year_number=None,
-                                             month_number=None):
-    this_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
-    if month_number == 1:
-        year_number -= year_number
-        month_number = 12
+                                             month_number=None,
+                                             week_of_year=None):
+    if week_of_year:
+        this_avg = _h.get_avg_score_per_week(avatar_id, year_number, week_of_year)
+        if week_of_year == 1:
+            week_of_year = 52
+            year_number -= year_number
+        else:
+            week_of_year -= 1
+        last_avg = _h.get_avg_score_per_week(avatar_id, year_number, week_of_year)
     else:
-        month_number -= 1
-    last_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
+        this_avg = _h.get_avg_score_per_month(avatar_id, year_number,
+                                              month_number)
+        if month_number == 1:
+            year_number -= year_number
+            month_number = 12
+        else:
+            month_number -= 1
+        last_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
     if this_avg.avg_score is None:
         this_avg = "0.000"
     else:
@@ -148,8 +161,8 @@ def fetch_log_group_avg_cond_score_per_month(avatar_id=None, year_number=None,
     else:
         last_avg = str(last_avg.avg_score)
     return ok(dict(
-        this_month_score=this_avg,
-        last_month_score=last_avg
+        this_avg_score=this_avg,
+        last_avg_score=last_avg
     ))
 
 
@@ -249,9 +262,6 @@ def download_blob(avatar_id=None, photo_name=None):
     pathname = 'avatar/profile/'
     filename = photo_name
     blob = bucket.blob(pathname + filename)
-    # blob.download_to_filename(filename)
-    # return f'{filename} downloaded from bucket.'
-    # return send_file(filename, attachment_filename=path + filename)
     with tempfile.NamedTemporaryFile() as temp:
         blob.download_to_filename(temp.name)
         return send_file(temp.name, attachment_filename=filename)
@@ -467,7 +477,7 @@ def upload_profile_image(avatar_id=None):
 
     # Create a new blob and upload the file's content.
     # blob = bucket.blob(uploaded_file.filename)
-    str_date = datetime.datetime.now(tz=pytz.utc).strftime('%Y%m%d-%H%M%S')
+    str_date = datetime.datetime.now(tz=pytz.utc).strftime('%Y%m%d%H%M%S')
     path_name = 'avatar/profile/'
     file_name = '{0}-{1}.png'.format(str(avatar_id), str_date)
     blob = bucket.blob(path_name + file_name)
@@ -475,6 +485,12 @@ def upload_profile_image(avatar_id=None):
         uploaded_file.read(),
         content_type=uploaded_file.content_type
     )
+
+    avatar = _h.get_a_avatar(avatar_id)
+    if avatar.photo_name:
+        _blob = bucket.blob(path_name + avatar.photo_name)
+        _blob.delete()
+
     _h.update_avatar_info(avatar_id, AvatarInfo.photo_name, file_name)
     _h.update_avatar_info(avatar_id, AvatarInfo.color_code, 0)
     # The public URL can be used to directly access the uploaded file via HTTP.
