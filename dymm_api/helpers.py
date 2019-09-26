@@ -30,7 +30,8 @@ class Helpers(object):
     # -------------------------------------------------------------------------
     @staticmethod
     def gen_random_profile_color() -> int:
-        profile_colors = [1, 2, 3, 4, 5, 6, 7, 8]
+        profile_colors = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        random.shuffle(profile_colors)
         random.shuffle(profile_colors)
         return profile_colors[5]
 

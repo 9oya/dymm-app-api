@@ -445,6 +445,7 @@ def search_tags(tag_id=None, page=None):
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 
 
+# Unwrap when test on localhost
 # @avt_api.route('/<int:avatar_id>/profile-img', methods=['POST'])
 # def upload_profile_image1(avatar_id=None):
 #     if avatar_id is None:
@@ -460,6 +461,7 @@ def search_tags(tag_id=None, page=None):
 #         return ok()
 
 
+# Unwrap when deploy product
 @avt_api.route('/<int:avatar_id>/profile-img', methods=['POST'])
 def upload_profile_image(avatar_id=None):
     """Process the uploaded file and upload it to Google Cloud Storage."""
@@ -485,12 +487,10 @@ def upload_profile_image(avatar_id=None):
         uploaded_file.read(),
         content_type=uploaded_file.content_type
     )
-
     avatar = _h.get_a_avatar(avatar_id)
     if avatar.photo_name:
         _blob = bucket.blob(path_name + avatar.photo_name)
         _blob.delete()
-
     _h.update_avatar_info(avatar_id, AvatarInfo.photo_name, file_name)
     _h.update_avatar_info(avatar_id, AvatarInfo.color_code, 0)
     # The public URL can be used to directly access the uploaded file via HTTP.
