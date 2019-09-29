@@ -127,22 +127,35 @@ def fetch_group_of_logs(group_id=None):
     return ok(logs_js)
 
 
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/avg-score', 
+               methods=['GET'])
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
                'avg-score', methods=['GET'])
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
                '<int:week_of_year>/avg-score', methods=['GET'])
 @jwt_required
-def fetch_log_group_avg_cond_score_per_month(avatar_id=None, year_number=None,
-                                             month_number=None,
-                                             week_of_year=None):
+def fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
+                                   month_number=None,
+                                   week_of_year=None):
+    if month_number is None:
+        avg_score = _h.get_avg_score_per_year(avatar_id, year_number)
+        if avg_score.avg_score is None:
+            this_avg = "0.000"
+        else:
+            this_avg = str(avg_score.avg_score)
+        return ok(dict(
+            this_avg_score=this_avg
+        ))
     if week_of_year:
-        this_avg = _h.get_avg_score_per_week(avatar_id, year_number, week_of_year)
+        this_avg = _h.get_avg_score_per_week(avatar_id, year_number,
+                                             week_of_year)
         if week_of_year == 1:
             week_of_year = 52
             year_number -= year_number
         else:
             week_of_year -= 1
-        last_avg = _h.get_avg_score_per_week(avatar_id, year_number, week_of_year)
+        last_avg = _h.get_avg_score_per_week(avatar_id, year_number,
+                                             week_of_year)
     else:
         this_avg = _h.get_avg_score_per_month(avatar_id, year_number,
                                               month_number)
