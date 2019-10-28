@@ -17,6 +17,9 @@ class ErrorPattern:
     PASS_INVALID = 33
     CODE_INVALID = 34
 
+    SCORE_NONE = 41
+    BIRTH_NONE = 42
+
 
 class MsgPattern:
     BAD_PARAM = 'Bad request, Wrong pattern parameters has been passed.'
@@ -79,6 +82,13 @@ class TagId:
     supp = 1040
     date_of_birth = 23
     password = 14641
+    theme = 14645
+    light = 14646
+    eng = 30
+    kor = 35
+    male = 36
+    female = 37
+    gender = 22
 
 
 class BookmarkSuperTag:

@@ -1,7 +1,7 @@
 import os, random, re
 
 from flask_jwt_extended import create_access_token, create_refresh_token
-from sqlalchemy import text, func
+from sqlalchemy import text, func, and_, or_
 
 from dymm_api import b_crypt, db
 from .patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
@@ -228,11 +228,11 @@ class Helpers(object):
         for profile_tag in profile_tags:
             _js = dict(
                 id=profile_tag.id,
-                tag_id=profile_tag.tag_id,
+                tag_id=profile_tag.sub_tag_id,
                 is_selected=profile_tag.is_selected,
-                eng_name=profile_tag.tag.eng_name,
-                kor_name=profile_tag.tag.kor_name,
-                jpn_name=profile_tag.tag.jpn_name
+                eng_name=profile_tag.sub_tag.eng_name,
+                kor_name=profile_tag.sub_tag.kor_name,
+                jpn_name=profile_tag.sub_tag.jpn_name
             )
             _js_list.append(_js)
         return _js_list
@@ -538,6 +538,46 @@ class Helpers(object):
         return avg_score
 
     @staticmethod
+    def get_avg_score_between_dates(avatar_id, start_date, end_date):
+        avg_score = LogGroup.query.with_entities(
+            func.avg(LogGroup.cond_score).label('avg_score')
+        ).filter(
+            LogGroup.avatar_id == avatar_id,
+            LogGroup.is_active == True,
+            LogGroup.log_date.between(start_date, end_date)
+        ).first()
+        return avg_score
+
+    @staticmethod
+    def get_remaining_life_span(score: int):
+        full_score = 1000
+        if full_score > score > 840:
+            waste_point = 109.5
+            full_span_day = 365 * 200
+            score_gap = full_score - score
+            waste_day = score_gap * waste_point
+            r_span_day = full_span_day - waste_day
+        elif score == 840:
+            r_span_day = 365 * 150
+        elif 839 >= score >= 740:
+            waste_point = 73
+            full_score = 840
+            full_span_day = 365 * 150
+            score_gap = full_score - score
+            waste_day = score_gap * waste_point
+            r_span_day = full_span_day - waste_day
+        elif 739 >= score >= 640:
+            waste_point = 109.5
+            full_score = 740
+            full_span_day = 365 * 130
+            score_gap = full_score - score
+            waste_day = score_gap * waste_point
+            r_span_day = full_span_day - waste_day
+        else:
+            return False
+        return r_span_day
+
+    @staticmethod
     def get_tag_logs(group_id, tag_type) -> [TagLog]:
         tag_logs = db_session.query(
             TagLog
@@ -609,10 +649,57 @@ class Helpers(object):
         return tag_sets
 
     @staticmethod
+    def get_valid_profile_tags(avatar_id, tag_sets):
+        profile_tags = list()
+        for tag_set in tag_sets:
+            profile_tag = ProfileTag.query.filter(
+                ProfileTag.avatar_id == avatar_id,
+                ProfileTag.super_tag_id == tag_set.sub_id,
+                ProfileTag.is_active == True
+            ).first()
+            if profile_tag:
+                profile_tags.append(profile_tag)
+            else:
+                if tag_set.sub_id == TagId.language:
+                    profile_tag = Helpers.create_profile_tag(avatar_id,
+                                                             tag_set.sub_id,
+                                                             TagId.eng, True)
+                elif tag_set.sub_id == TagId.theme:
+                    profile_tag = Helpers.create_profile_tag(avatar_id,
+                                                             tag_set.sub_id,
+                                                             TagId.light, True)
+                else:
+                    profile_tag = Helpers.create_profile_tag(avatar_id,
+                                                             tag_set.sub_id,
+                                                             tag_set.sub_id, False)
+                profile_tags.append(profile_tag)
+        return profile_tags
+
+    @staticmethod
     def get_a_profile_tag(profile_tag_id):
         profile_tag = ProfileTag.query.filter(
             ProfileTag.id == profile_tag_id,
             ProfileTag.is_active == True
+        ).first()
+        return profile_tag
+
+    @staticmethod
+    def get_a_lang_profile_tag(avatar_id):
+        profile_tag = ProfileTag.query.filter(
+            ProfileTag.avatar_id == avatar_id,
+            ProfileTag.super_tag_id == TagId.language,
+            ProfileTag.is_active == True,
+            # or_(ProfileTag.tag_id == TagId.eng, ProfileTag.tag_id == TagId.kor)
+        ).first()
+        return profile_tag
+
+    @staticmethod
+    def get_a_gender_profile_tag(avatar_id):
+        profile_tag = ProfileTag.query.filter(
+            ProfileTag.avatar_id == avatar_id,
+            ProfileTag.super_tag_id == TagId.gender,
+            ProfileTag.is_active == True
+            # or_(ProfileTag.sub_tag_id == TagId.eng, ProfileTag.sub_tag_id == TagId.kor)
         ).first()
         return profile_tag
 
@@ -824,17 +911,17 @@ class Helpers(object):
             return True
 
     @staticmethod
-    def create_profile_tag(avatar_id, tag_id, is_selected, priority):
+    def create_profile_tag(avatar_id, super_tag_id, sub_tag_id, is_selected):
         profile_tag = ProfileTag(
             avatar_id=avatar_id,
-            tag_id=tag_id,
+            super_tag_id=super_tag_id,
+            sub_tag_id=sub_tag_id,
             is_active=True,
-            is_selected=is_selected,
-            priority=priority
+            is_selected=is_selected
         )
         db_session.add(profile_tag)
         db_session.commit()
-        return True
+        return profile_tag
 
     @staticmethod
     def create_def_profile_tags(avatar_id, language_id):
@@ -843,14 +930,21 @@ class Helpers(object):
         for tag_set in tag_sets:
             if tag_set.sub_id == TagId.language:
                 Helpers.create_profile_tag(avatar_id=avatar_id,
-                                           tag_id=language_id,
-                                           is_selected=True,
-                                           priority=tag_set.priority)
+                                           super_tag_id=tag_set.sub_id,
+                                           sub_tag_id=language_id,
+                                           is_selected=True)
                 continue
-            Helpers.create_profile_tag(avatar_id=avatar_id,
-                                       tag_id=tag_set.sub_id,
-                                       is_selected=False,
-                                       priority=tag_set.priority)
+            elif tag_set.sub_id == TagId.theme:
+                Helpers.create_profile_tag(avatar_id=avatar_id,
+                                           super_tag_id=tag_set.sub_id,
+                                           sub_tag_id=TagId.light,
+                                           is_selected=True)
+                continue
+            else:
+                Helpers.create_profile_tag(avatar_id=avatar_id,
+                                           super_tag_id=tag_set.sub_id,
+                                           sub_tag_id=tag_set.sub_id,
+                                           is_selected=False)
         return True
 
     @staticmethod
@@ -949,7 +1043,7 @@ class Helpers(object):
 
     @staticmethod
     def update_profile_tag(profile_tag: ProfileTag, tag_id, is_selected):
-        profile_tag.tag_id = tag_id
+        profile_tag.sub_tag_id = tag_id
         profile_tag.is_selected = is_selected
         profile_tag.modified_timestamp = text("timezone('utc'::text, now())")
         db_session.commit()

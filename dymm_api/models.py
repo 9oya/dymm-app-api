@@ -153,17 +153,18 @@ class LogHistory(Base):
 class ProfileTag(Base):
     __tablename__ = 'profile_tag'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, server_default=text("nextval('profile_tag_id_seq'::regclass)"))
     avatar_id = Column(ForeignKey('avatar.id', ondelete='CASCADE'), nullable=False, index=True)
-    tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
+    super_tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False, index=True)
+    sub_tag_id = Column(ForeignKey('tag.id', ondelete='CASCADE'), nullable=False)
     is_active = Column(Boolean, nullable=False)
     is_selected = Column(Boolean, nullable=False)
-    priority = Column(SmallInteger, nullable=False, server_default=text("0"))
-    created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
+    created_timestamp = Column(DateTime)
     modified_timestamp = Column(DateTime)
 
     avatar = relationship('Avatar')
-    tag = relationship('Tag')
+    sub_tag = relationship('Tag', primaryjoin='ProfileTag.sub_tag_id == Tag.id')
+    super_tag = relationship('Tag', primaryjoin='ProfileTag.super_tag_id == Tag.id')
 
 
 class TagSet(Base):

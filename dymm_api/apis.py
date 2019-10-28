@@ -34,10 +34,13 @@ def fetch_a_avatar(avatar_id=None):
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
-    # if avatar.color_code == 99:
-    #     avatar_js['photo_url'] = '/avatar/profile/photo-{0}.png'.format(
-    #         avatar_id)
-    return ok(avatar_js)
+    # profile_tags = _h.get_profile_tags(avatar.id)
+    lang_profile_tag = _h.get_a_lang_profile_tag(avatar_id)
+    if lang_profile_tag is None:
+        lang_profile_tag = _h.create_profile_tag(avatar_id, TagId.language,
+                                                 TagId.eng, True)
+    auth = dict(avatar=avatar_js, language_id=lang_profile_tag.sub_tag_id)
+    return ok(auth)
 
 
 @avt_api.route('/<int:avatar_id>/profile', methods=['GET'])
@@ -49,13 +52,13 @@ def fetch_avatar_profile(avatar_id=None):
     if not avatar.is_confirmed:
         return unauthorized(pattern=_e.MAIL_NEED_CONF, message=avatar.email)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
-    # if avatar.color_code == 99:
-    #     avatar_js['photo_url'] = '/avatar/profile/photo-{0}.png'.format(
-    #         avatar_id)
-    profile_tags = _h.get_profile_tags(avatar_id)
-    profile_tag_jss = _h.convert_profile_tag_into_js(profile_tags)
-    profile = dict(avatar=avatar_js,
-                   profile_tags=profile_tag_jss)
+
+    set_of_profile_tags = _h.get_tag_sets(TagId.profile, sort_type='priority')
+    profile_tags = _h.get_valid_profile_tags(avatar_id, set_of_profile_tags)
+    profile_tag_js_list = _h.convert_profile_tag_into_js(profile_tags)
+    lang_profile_tag = _h.get_a_lang_profile_tag(avatar_id)
+    profile = dict(avatar=avatar_js, language_id=lang_profile_tag.sub_tag_id,
+                   profile_tags=profile_tag_js_list)
     return ok(profile)
 
 
@@ -179,6 +182,38 @@ def fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
     ))
 
 
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/score-board',
+               methods=['GET'])
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
+               'score-board', methods=['GET'])
+@jwt_required
+def fetch_main_score_board_info(avatar_id=None, year_number=None,
+                                month_number=None):
+    if month_number:
+        this_avg_score = _h.get_avg_score_per_month(avatar_id, year_number,
+                                                    month_number)
+    else:
+        this_avg_score = _h.get_avg_score_per_year(avatar_id, year_number)
+    if this_avg_score.avg_score is None:
+        this_avg_score = "0.000"
+    else:
+        this_avg_score = str(this_avg_score.avg_score)
+
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id)
+    gender_profile_tag = _h.get_a_gender_profile_tag(avatar_id)
+    if gender_profile_tag is None:
+        gender_profile_tag = _h.create_profile_tag(avatar_id, TagId.gender,
+                                                   TagId.gender, False)
+    gender_tag_js = _h.convert_a_tag_into_js(gender_profile_tag.sub_tag)
+    return ok(dict(
+        avg_score=this_avg_score,
+        date_of_birth=avatar.date_of_birth,
+        gender_tag=gender_tag_js
+    ))
+
+
 @bnr_api.route('', methods=['GET'])
 def fetch_banners():
     banners = _h.get_banners()
@@ -280,6 +315,34 @@ def download_blob(avatar_id=None, photo_name=None):
         return send_file(temp.name, attachment_filename=filename)
 
 
+@avt_api.route('/<int:avatar_id>/life-span')
+def fetch_remaining_life_span(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    today = datetime.datetime.today()
+    curr_year = today.year
+    curr_month = today.month
+    start_date = "{0}-{1}-{2}".format(curr_year - 1, curr_month, 1)
+    end_date = "{0}-{1}-{2}".format(curr_year, curr_month, today.day)
+    this_avg_score = _h.get_avg_score_between_dates(avatar_id, start_date,
+                                                    end_date)
+    if this_avg_score is None or this_avg_score.avg_score is None:
+        return unauthorized(_e.SCORE_NONE)
+    avatar = _h.get_a_avatar(avatar_id)
+    if avatar.date_of_birth is None:
+        return unauthorized(_e.BIRTH_NONE)
+
+    avg_score = format(this_avg_score.avg_score, '.2f')
+    str_score = avg_score.split('.')[0] + avg_score.split('.')[1]
+    r_life_span_day = _h.get_remaining_life_span(int(str_score))
+    r_life_span_day = int(format(r_life_span_day, '.0f'))
+
+    date_of_birth = datetime.datetime.strptime(avatar.date_of_birth, '%Y-%m-%d')
+    gap_date = datetime.datetime.today() - date_of_birth
+    r_life_span_day -= gap_date.days
+    return ok(r_life_span_day)
+
+
 # POST services
 # -----------------------------------------------------------------------------
 @avt_api.route('/auth', methods=['POST'])
@@ -300,8 +363,11 @@ def auth_old_avatar():
     if not b_crypt.check_password_hash(avatar.password_hash, data['password']):
         return unauthorized(_e.PASS_INVALID)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
-    profile_tags = _h.get_profile_tags(avatar.id)
-    auth = dict(avatar=avatar_js, language_id=profile_tags[0].tag_id)
+    lang_profile_tag = _h.get_a_lang_profile_tag(avatar.id)
+    if lang_profile_tag is None:
+        lang_profile_tag = _h.create_profile_tag(avatar.id, TagId.language,
+                                                 TagId.eng, True)
+    auth = dict(avatar=avatar_js, language_id=lang_profile_tag.sub_tag_id)
     return ok(auth)
 
 
