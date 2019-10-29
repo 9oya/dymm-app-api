@@ -25,6 +25,7 @@ class Avatar(Base):
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
     photo_name = Column(String(100))
+    full_lifespan = Column(Integer)
 
 
 class Banner(Base):

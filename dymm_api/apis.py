@@ -334,13 +334,16 @@ def fetch_remaining_life_span(avatar_id=None):
 
     avg_score = format(this_avg_score.avg_score, '.2f')
     str_score = avg_score.split('.')[0] + avg_score.split('.')[1]
-    r_life_span_day = _h.get_remaining_life_span(int(str_score))
-    r_life_span_day = int(format(r_life_span_day, '.0f'))
+    full_lifespan_day = _h.get_remaining_life_span(int(str_score))
+    full_lifespan_day = int(format(full_lifespan_day, '.0f'))
+
+    # Log full_lifespan_day on avatar for ranking
+    _h.update_avatar_info(avatar, AvatarInfo.full_lifespan, full_lifespan_day)
 
     date_of_birth = datetime.datetime.strptime(avatar.date_of_birth, '%Y-%m-%d')
     gap_date = datetime.datetime.today() - date_of_birth
-    r_life_span_day -= gap_date.days
-    return ok(r_life_span_day)
+    r_lifespan_day = full_lifespan_day - gap_date.days
+    return ok(r_lifespan_day)
 
 
 # POST services
@@ -570,8 +573,8 @@ def upload_profile_image(avatar_id=None):
     if avatar.photo_name:
         _blob = bucket.blob(path_name + avatar.photo_name)
         _blob.delete()
-    _h.update_avatar_info(avatar_id, AvatarInfo.photo_name, file_name)
-    _h.update_avatar_info(avatar_id, AvatarInfo.color_code, 0)
+    _h.update_avatar_info(avatar, AvatarInfo.photo_name, file_name)
+    _h.update_avatar_info(avatar, AvatarInfo.color_code, 0)
     # The public URL can be used to directly access the uploaded file via HTTP.
     print(blob.public_url)
     return blob.public_url
@@ -591,11 +594,10 @@ def put_avatar_info():
         avatar = _h.get_a_avatar(data['avatar_id'])
         if not b_crypt.check_password_hash(avatar.password_hash, old_password):
             return unauthorized(_e.PASS_INVALID)
-        _h.update_avatar_info(avatar.id, data['target'],
-                              data['new_info'])
+        _h.update_avatar_info(avatar, data['target'], data['new_info'])
     except KeyError:
-        _h.update_avatar_info(data['avatar_id'], data['target'],
-                              data['new_info'])
+        avatar = _h.get_a_avatar(data['avatar_id'])
+        _h.update_avatar_info(avatar, data['target'], data['new_info'])
     return ok()
 
 

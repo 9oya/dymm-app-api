@@ -574,7 +574,12 @@ class Helpers(object):
             waste_day = score_gap * waste_point
             r_span_day = full_span_day - waste_day
         else:
-            return False
+            waste_point = 36.5
+            full_score = 640
+            full_span_day = 365 * 100
+            score_gap = full_score - score
+            waste_day = score_gap * waste_point
+            r_span_day = full_span_day - waste_day
         return r_span_day
 
     @staticmethod
@@ -989,11 +994,7 @@ class Helpers(object):
         return True
 
     @staticmethod
-    def update_avatar_info(avatar_id, target, new_info) -> bool:
-        avatar = Avatar.query.filter(
-            Avatar.id == avatar_id,
-            Avatar.is_active == True
-        ).first()
+    def update_avatar_info(avatar: Avatar, target, new_info) -> bool:
         if target == AvatarInfo.first_name:
             avatar.first_name = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
@@ -1024,6 +1025,10 @@ class Helpers(object):
             return True
         elif target == AvatarInfo.photo_name:
             avatar.photo_name = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
+        elif target == AvatarInfo.full_lifespan:
+            avatar.full_lifespan = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
         elif target == TagId.password:

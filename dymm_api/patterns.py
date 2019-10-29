@@ -107,3 +107,4 @@ class AvatarInfo:
     intro = 15
     color_code = 16
     photo_name = 17
+    full_lifespan = 18
