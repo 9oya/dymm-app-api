@@ -266,6 +266,22 @@ class Helpers(object):
             _js_list.append(_js)
         return _js_list
 
+    @staticmethod
+    def convert_rankings_into_js(rankings):
+        _js_list = list()
+        for ranking in rankings:
+            _js = dict(
+                avatar_id=ranking.id,
+                first_name=ranking.first_name,
+                last_name=ranking.last_name,
+                photo_name=ranking.photo_name,
+                color_code=ranking.color_code,
+                full_lifespan=ranking.full_lifespan,
+                rank_num=ranking.rnk
+            )
+            _js_list.append(_js)
+        return _js_list
+
     # GET methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -798,6 +814,23 @@ class Helpers(object):
             LogHistory.modified_timestamp.desc()
         ).limit(24).all()
         return log_histories
+
+    @staticmethod
+    def get_lifespan_rankings(age_range, page, per_page=40):
+        rankings = db_session.query(
+            Avatar.id,
+            Avatar.first_name,
+            Avatar.last_name,
+            Avatar.photo_name,
+            Avatar.color_code,
+            Avatar.full_lifespan,
+            func.rank().over(
+                order_by=Avatar.full_lifespan.desc()
+            ).label('rnk')
+        ).filter(
+            Avatar.full_lifespan > 0
+        ).paginate(page, per_page, False).items
+        return rankings
 
     # CREATE methods
     # -------------------------------------------------------------------------

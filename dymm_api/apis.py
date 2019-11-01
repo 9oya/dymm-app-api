@@ -315,7 +315,7 @@ def download_blob(avatar_id=None, photo_name=None):
         return send_file(temp.name, attachment_filename=filename)
 
 
-@avt_api.route('/<int:avatar_id>/life-span')
+@avt_api.route('/<int:avatar_id>/life-span', methods=['GET'])
 def fetch_remaining_life_span(avatar_id=None):
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
@@ -344,6 +344,17 @@ def fetch_remaining_life_span(avatar_id=None):
     gap_date = datetime.datetime.today() - date_of_birth
     r_lifespan_day = full_lifespan_day - gap_date.days
     return ok(r_lifespan_day)
+
+
+@avt_api.route('/ranking/<int:age_range>/<int:start_point>', methods=['GET'])
+def fetch_lifespan_rankings(age_range=None, start_point=None):
+    if age_range is None:
+        return bad_req(_m.EMPTY_PARAM.format('age_range'))
+    if start_point is None:
+        return bad_req(_m.EMPTY_PARAM.format('start_point'))
+    rankings = _h.get_lifespan_rankings(age_range, 1, 40)
+    js_rankings = _h.convert_rankings_into_js(rankings)
+    return ok(dict(rankings=js_rankings))
 
 
 # POST services
