@@ -282,6 +282,19 @@ class Helpers(object):
             _js_list.append(_js)
         return _js_list
 
+    @staticmethod
+    def convert_a_ranking_into_js(ranking):
+        _js = dict(
+            avatar_id=ranking.id,
+            first_name=ranking.first_name,
+            last_name=ranking.last_name,
+            photo_name=ranking.photo_name,
+            color_code=ranking.color_code,
+            full_lifespan=ranking.full_lifespan,
+            rank_num=ranking.rnk
+        )
+        return _js
+
     # GET methods
     # -------------------------------------------------------------------------
     @staticmethod
@@ -816,8 +829,8 @@ class Helpers(object):
         return log_histories
 
     @staticmethod
-    def get_lifespan_rankings(age_range, page, per_page=40):
-        rankings = db_session.query(
+    def get_a_lifespan_ranking(avatar_id, age_range):
+        sq = db_session.query(
             Avatar.id,
             Avatar.first_name,
             Avatar.last_name,
@@ -829,6 +842,31 @@ class Helpers(object):
             ).label('rnk')
         ).filter(
             Avatar.full_lifespan > 0
+        ).subquery()
+
+        ranking = db_session.query(sq).filter(
+            sq.c.id == avatar_id
+        ).first()
+        return ranking
+
+    @staticmethod
+    def get_lifespan_rankings(age_range, starting, page, per_page=20):
+        sq = db_session.query(
+            Avatar.id,
+            Avatar.first_name,
+            Avatar.last_name,
+            Avatar.photo_name,
+            Avatar.color_code,
+            Avatar.full_lifespan,
+            func.rank().over(
+                order_by=Avatar.full_lifespan.desc()
+            ).label('rnk')
+        ).filter(
+            Avatar.full_lifespan > 0
+        ).subquery()
+
+        rankings = db_session.query(sq).filter(
+            sq.c.rnk >= starting
         ).paginate(page, per_page, False).items
         return rankings
 
