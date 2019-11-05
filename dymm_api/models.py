@@ -21,7 +21,7 @@ class Avatar(Base):
     ph_number = Column(String(50))
     color_code = Column(Integer, nullable=False)
     introduction = Column(String(200))
-    date_of_birth = Column(CHAR(10))
+    date_of_birth = Column(Date)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
     photo_name = Column(String(100))

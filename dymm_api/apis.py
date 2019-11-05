@@ -340,19 +340,22 @@ def fetch_remaining_life_span(avatar_id=None):
     # Log the full_lifespan_day into avatar table for ranking
     _h.update_avatar_info(avatar, AvatarInfo.full_lifespan, full_lifespan_day)
 
-    date_of_birth = datetime.datetime.strptime(avatar.date_of_birth, '%Y-%m-%d')
+    date_of_birth = datetime.datetime(avatar.date_of_birth.year,
+                                      avatar.date_of_birth.month,
+                                      avatar.date_of_birth.day)
     gap_date = datetime.datetime.today() - date_of_birth
     r_lifespan_day = full_lifespan_day - gap_date.days
     return ok(r_lifespan_day)
 
 
-@avt_api.route('/ranking/<int:age_range>/<int:starting>', methods=['GET'])
-def fetch_lifespan_rankings(age_range=None, starting=None):
+@avt_api.route('/ranking/<int:age_range>/<int:starting>/<int:page>',
+               methods=['GET'])
+def fetch_lifespan_rankings(age_range=None, starting=None, page=None):
     if age_range is None:
         return bad_req(_m.EMPTY_PARAM.format('age_range'))
     if starting is None:
         return bad_req(_m.EMPTY_PARAM.format('starting'))
-    rankings = _h.get_lifespan_rankings(age_range, starting, 1, 40)
+    rankings = _h.get_lifespan_rankings(age_range, starting, page, 15)
     js_rankings = _h.convert_rankings_into_js(rankings)
     return ok(dict(rankings=js_rankings))
 
@@ -364,7 +367,11 @@ def fetch_my_lifespan_ranking(avatar_id=None, age_range=None):
     if age_range is None:
         return bad_req(_m.EMPTY_PARAM.format('age_range'))
     ranking = _h.get_a_lifespan_ranking(avatar_id, age_range)
-    js_ranking = _h.convert_a_ranking_into_js(ranking)
+    if ranking is not None:
+        js_ranking = _h.convert_a_ranking_into_js(ranking=ranking)
+    else:
+        avatar = _h.get_a_avatar(avatar_id)
+        js_ranking = _h.convert_a_ranking_into_js(avatar=avatar)
     return ok(data=js_ranking)
 
 

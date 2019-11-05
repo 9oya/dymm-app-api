@@ -1,4 +1,4 @@
-import os, random, re
+import os, random, re, datetime
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import text, func, and_, or_
@@ -86,6 +86,12 @@ class Helpers(object):
 
     @staticmethod
     def convert_a_avatar_into_js(avatar: Avatar) -> dict:
+        if avatar.date_of_birth is not None:
+            date_of_birth = "{0}-{1}-{2}".format(avatar.date_of_birth.year,
+                                                 avatar.date_of_birth.month,
+                                                 avatar.date_of_birth.day)
+        else:
+            date_of_birth = None
         _js = dict(
             id=avatar.id,
             is_blocked=avatar.is_blocked,
@@ -97,7 +103,7 @@ class Helpers(object):
             color_code=avatar.color_code,
             photo_name=avatar.photo_name,
             introudction=avatar.introduction,
-            date_of_birth=avatar.date_of_birth,
+            date_of_birth=date_of_birth,
             access_token=create_access_token(
                 identity=dict(email=avatar.email), fresh=True
             ),
@@ -270,6 +276,43 @@ class Helpers(object):
     def convert_rankings_into_js(rankings):
         _js_list = list()
         for ranking in rankings:
+            # _js = dict(
+            #     avatar_id=ranking.id,
+            #     first_name=ranking.first_name,
+            #     last_name=ranking.last_name,
+            #     photo_name=ranking.photo_name,
+            #     color_code=ranking.color_code,
+            #     full_lifespan=ranking.full_lifespan,
+            #     rank_num=ranking.rnk
+            # )
+            full_lifespan = ranking.full_lifespan
+            if full_lifespan is None:
+                full_lifespan = 30000
+            _js = dict(
+                avatar_id=ranking.id,
+                first_name=ranking.first_name,
+                last_name=ranking.last_name,
+                photo_name=ranking.photo_name,
+                color_code=ranking.color_code,
+                full_lifespan=full_lifespan,
+                rank_num=ranking.rnk
+            )
+            _js_list.append(_js)
+        return _js_list
+
+    @staticmethod
+    def convert_a_ranking_into_js(ranking=None, avatar=None):
+        if avatar is not None:
+            _js = dict(
+                avatar_id=avatar.id,
+                first_name=avatar.first_name,
+                last_name=avatar.last_name,
+                photo_name=avatar.photo_name,
+                color_code=avatar.color_code,
+                full_lifespan=avatar.full_lifespan,
+                rank_num=0
+            )
+        else:
             _js = dict(
                 avatar_id=ranking.id,
                 first_name=ranking.first_name,
@@ -279,20 +322,6 @@ class Helpers(object):
                 full_lifespan=ranking.full_lifespan,
                 rank_num=ranking.rnk
             )
-            _js_list.append(_js)
-        return _js_list
-
-    @staticmethod
-    def convert_a_ranking_into_js(ranking):
-        _js = dict(
-            avatar_id=ranking.id,
-            first_name=ranking.first_name,
-            last_name=ranking.last_name,
-            photo_name=ranking.photo_name,
-            color_code=ranking.color_code,
-            full_lifespan=ranking.full_lifespan,
-            rank_num=ranking.rnk
-        )
         return _js
 
     # GET methods
@@ -830,41 +859,125 @@ class Helpers(object):
 
     @staticmethod
     def get_a_lifespan_ranking(avatar_id, age_range):
-        sq = db_session.query(
-            Avatar.id,
-            Avatar.first_name,
-            Avatar.last_name,
-            Avatar.photo_name,
-            Avatar.color_code,
-            Avatar.full_lifespan,
-            func.rank().over(
-                order_by=Avatar.full_lifespan.desc()
-            ).label('rnk')
-        ).filter(
-            Avatar.full_lifespan > 0
-        ).subquery()
+        today = datetime.datetime.today()
+        start_date = '1900-1-1'
+        end_date = None
+        if age_range == 2:
+            start_date = '{0}-{1}-{2}'.format(today.year - 30,
+                                              today.month, today.day)
+            end_date = '2999-12-1'
+        elif age_range == 3:
+            start_date = '{0}-{1}-{2}'.format(today.year - 50,
+                                              today.month, today.day)
+            end_date = '{0}-{1}-{2}'.format(today.year - 30,
+                                            today.month, today.day)
+        elif age_range == 4:
+            start_date = '{0}-{1}-{2}'.format(today.year - 70,
+                                              today.month, today.day)
+            end_date = '{0}-{1}-{2}'.format(today.year - 50,
+                                            today.month, today.day)
+        elif age_range == 5:
+            end_date = '{0}-{1}-{2}'.format(today.year - 70,
+                                            today.month, today.day)
+        if end_date is not None:
+            sq = db_session.query(
+                Avatar.id,
+                Avatar.first_name,
+                Avatar.last_name,
+                Avatar.photo_name,
+                Avatar.color_code,
+                Avatar.full_lifespan,
+                func.rank().over(
+                    order_by=Avatar.full_lifespan.desc()
+                ).label('rnk')
+            ).filter(
+                Avatar.full_lifespan > 0,
+                and_(Avatar.date_of_birth >= start_date,
+                     Avatar.date_of_birth <= end_date)
+            ).subquery()
 
-        ranking = db_session.query(sq).filter(
-            sq.c.id == avatar_id
-        ).first()
+            ranking = db_session.query(sq).filter(
+                sq.c.id == avatar_id
+            ).first()
+        else:
+            sq = db_session.query(
+                Avatar.id,
+                Avatar.first_name,
+                Avatar.last_name,
+                Avatar.photo_name,
+                Avatar.color_code,
+                Avatar.full_lifespan,
+                func.rank().over(
+                    order_by=Avatar.full_lifespan.desc()
+                ).label('rnk')
+            ).filter(
+                Avatar.full_lifespan > 0
+            ).subquery()
+
+            ranking = db_session.query(sq).filter(
+                sq.c.id == avatar_id
+            ).first()
         return ranking
 
     @staticmethod
     def get_lifespan_rankings(age_range, starting, page, per_page=20):
-        sq = db_session.query(
-            Avatar.id,
-            Avatar.first_name,
-            Avatar.last_name,
-            Avatar.photo_name,
-            Avatar.color_code,
-            Avatar.full_lifespan,
-            func.rank().over(
-                order_by=Avatar.full_lifespan.desc()
-            ).label('rnk')
-        ).filter(
-            Avatar.full_lifespan > 0
-        ).subquery()
+        today = datetime.datetime.today()
+        start_date = '1900-1-1'
+        end_date = None
+        if age_range == 2:
+            start_date = '{0}-{1}-{2}'.format(today.year - 30,
+                                              today.month, today.day)
+            end_date = '2999-12-1'
+        elif age_range == 3:
+            start_date = '{0}-{1}-{2}'.format(today.year - 50,
+                                              today.month, today.day)
+            end_date = '{0}-{1}-{2}'.format(today.year - 30,
+                                            today.month, today.day)
+        elif age_range == 4:
+            start_date = '{0}-{1}-{2}'.format(today.year - 70,
+                                              today.month, today.day)
+            end_date = '{0}-{1}-{2}'.format(today.year - 50,
+                                            today.month, today.day)
+        elif age_range == 5:
+            end_date = '{0}-{1}-{2}'.format(today.year - 70,
+                                            today.month, today.day)
+        if end_date is not None:
+            sq = db_session.query(
+                Avatar.id,
+                Avatar.first_name,
+                Avatar.last_name,
+                Avatar.photo_name,
+                Avatar.color_code,
+                Avatar.full_lifespan,
+                func.rank().over(
+                    order_by=Avatar.full_lifespan.desc()
+                ).label('rnk')
+            ).filter(
+                Avatar.full_lifespan > 0,
+                and_(Avatar.date_of_birth >= start_date,
+                     Avatar.date_of_birth <= end_date)
+            ).subquery()
+        else:
+            sq = db_session.query(
+                Avatar.id,
+                Avatar.first_name,
+                Avatar.last_name,
+                Avatar.photo_name,
+                Avatar.color_code,
+                Avatar.full_lifespan,
+                func.rank().over(
+                    order_by=Avatar.full_lifespan.desc()
+                ).label('rnk')
+            ).filter(
+                Avatar.full_lifespan > 0
+            ).subquery()
 
+        if starting == 2:
+            starting = 100
+        elif starting == 3:
+            starting = 500
+        elif starting == 4:
+            starting = 1000
         rankings = db_session.query(sq).filter(
             sq.c.rnk >= starting
         ).paginate(page, per_page, False).items
