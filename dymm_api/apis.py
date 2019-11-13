@@ -625,8 +625,17 @@ def put_avatar_info():
             return unauthorized(_e.PASS_INVALID)
         _h.update_avatar_info(avatar, data['target'], data['new_info'])
     except KeyError:
+        # If it's not attempt to change password.
         avatar = _h.get_a_avatar(data['avatar_id'])
-        _h.update_avatar_info(avatar, data['target'], data['new_info'])
+        target = data['target']
+        new_info = data['new_info']
+        if target == AvatarInfo.email:
+            if _h.is_email_duplicated(new_info):
+                return unauthorized(_e.MAIL_DUP)
+            if _h.update_avatar_info(avatar, target, new_info):
+                send_conf_mail(new_info)
+                return ok()
+        _h.update_avatar_info(avatar, target, new_info)
     return ok()
 
 

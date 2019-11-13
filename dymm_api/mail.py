@@ -41,6 +41,7 @@ def send_conf_mail(mail_address):
     message = Message()
     # TODO: message.add_recipient(email_address)
     message.add_recipient('eslee004@gmail.com')
+    # message.add_recipient('eido9oya@dymm.io')
     mail_token = generate_confirmation_token(mail_address)
     uri = _u.HOST + '/api/mail/conf/' + mail_token
     message.html = render_template('mail_conf_msg.html', uri=uri)
@@ -52,6 +53,7 @@ def send_verif_mail(mail_address):
     message = Message()
     # TODO: message.add_recipient(email_address)
     message.add_recipient('eslee004@gmail.com')
+    # message.add_recipient('eido9oya@dymm.io')
     verif_code = generate_verification_code(mail_address)
     message.html = render_template('mail_verification.html',
                                    verif_code=verif_code.upper())

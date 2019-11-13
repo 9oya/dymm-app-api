@@ -1,6 +1,6 @@
 class URIPattern:
     HOST = 'http://127.0.0.1:5000'
-    # HOST = 'https://dymm-api-test4.herokuapp.com'
+    # HOST = 'https://dymm-api-01.appspot.com'
     ASSET = 'dymm_api/static/asset'
 
 
@@ -79,16 +79,16 @@ class TagId:
     food = 5
     profile = 19
     language = 20
-    supp = 1040
+    gender = 22
     date_of_birth = 23
-    password = 14641
-    theme = 14645
-    light = 14646
+    supp = 1040
     eng = 30
     kor = 35
     male = 36
     female = 37
-    gender = 22
+    password = 14641
+    theme = 14645
+    light = 14646
 
 
 class BookmarkSuperTag:
