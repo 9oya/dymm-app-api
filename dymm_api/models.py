@@ -21,11 +21,11 @@ class Avatar(Base):
     ph_number = Column(String(50))
     color_code = Column(Integer, nullable=False)
     introduction = Column(String(200))
-    date_of_birth = Column(Date)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
     photo_name = Column(String(100))
     full_lifespan = Column(Integer)
+    date_of_birth = Column(Date)
 
 
 class Banner(Base):
@@ -64,7 +64,6 @@ class Tag(Base):
     division4 = Column(SmallInteger)
     division5 = Column(SmallInteger)
     has_low_div = Column(Boolean)
-    has_icon = Column(Boolean)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
 

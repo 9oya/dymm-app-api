@@ -1,6 +1,6 @@
 class URIPattern:
-    HOST = 'http://127.0.0.1:5000'
-    # HOST = 'https://dymm-api-01.appspot.com'
+    # HOST = 'http://127.0.0.1:5000'
+    HOST = 'https://dymm-api-01.appspot.com'
     ASSET = 'dymm_api/static/asset'
 
 
