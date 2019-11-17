@@ -182,7 +182,13 @@ class Helpers(object):
                    tag_type=tag.tag_type,
                    eng_name=tag.eng_name,
                    kor_name=tag.kor_name,
-                   jpn_name=tag.jpn_name)
+                   jpn_name=tag.jpn_name,
+                   class1=tag.class1,
+                   division1=tag.division1,
+                   division2=tag.division2,
+                   division3=tag.division3,
+                   division4=tag.division4,
+                   division5=tag.division5)
         return _js
 
     @staticmethod
@@ -205,7 +211,13 @@ class Helpers(object):
                        tag_type=tag_set.sub.tag_type,
                        eng_name=tag_set.sub.eng_name,
                        kor_name=tag_set.sub.kor_name,
-                       jpn_name=tag_set.sub.jpn_name)
+                       jpn_name=tag_set.sub.jpn_name,
+                       class1=tag_set.sub.class1,
+                       division1=tag_set.sub.division1,
+                       division2=tag_set.sub.division2,
+                       division3=tag_set.sub.division3,
+                       division4=tag_set.sub.division4,
+                       division5=tag_set.sub.division5)
             _js_list.append(_js)
         return _js_list
 
