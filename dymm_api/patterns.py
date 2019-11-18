@@ -86,7 +86,7 @@ class TagId:
     kor = 35
     male = 36
     female = 37
-    password = 14641
+    password = 14642
     theme = 14645
     light = 14646
 

@@ -84,6 +84,10 @@ class Schema:
             "avatar_id": {
                 "type": "integer"
             },
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
             "target": {
                 "type": "integer"
             },
@@ -94,7 +98,7 @@ class Schema:
                 "type": "string"
             }
         },
-        "required": ["avatar_id", "target", "new_info"],
+        "required": ["target", "new_info"],
         "additionalProperties": False
     }
     create_log = {

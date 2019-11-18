@@ -738,15 +738,18 @@ class Helpers(object):
                 if tag_set.sub_id == TagId.language:
                     profile_tag = Helpers.create_profile_tag(avatar_id,
                                                              tag_set.sub_id,
-                                                             TagId.eng, True)
+                                                             TagId.eng,
+                                                             True)
                 elif tag_set.sub_id == TagId.theme:
                     profile_tag = Helpers.create_profile_tag(avatar_id,
                                                              tag_set.sub_id,
-                                                             TagId.light, True)
+                                                             TagId.light,
+                                                             True)
                 else:
                     profile_tag = Helpers.create_profile_tag(avatar_id,
                                                              tag_set.sub_id,
-                                                             tag_set.sub_id, False)
+                                                             tag_set.sub_id,
+                                                             False)
                 profile_tags.append(profile_tag)
         return profile_tags
 
@@ -763,8 +766,7 @@ class Helpers(object):
         profile_tag = ProfileTag.query.filter(
             ProfileTag.avatar_id == avatar_id,
             ProfileTag.super_tag_id == TagId.language,
-            ProfileTag.is_active == True,
-            # or_(ProfileTag.tag_id == TagId.eng, ProfileTag.tag_id == TagId.kor)
+            ProfileTag.is_active == True
         ).first()
         return profile_tag
 
@@ -774,7 +776,6 @@ class Helpers(object):
             ProfileTag.avatar_id == avatar_id,
             ProfileTag.super_tag_id == TagId.gender,
             ProfileTag.is_active == True
-            # or_(ProfileTag.sub_tag_id == TagId.eng, ProfileTag.sub_tag_id == TagId.kor)
         ).first()
         return profile_tag
 

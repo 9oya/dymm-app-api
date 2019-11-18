@@ -33,8 +33,9 @@ def fetch_a_avatar(avatar_id=None):
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
+    if avatar is None:
+        return unauthorized(_e.USER_INVALID)
     avatar_js = _h.convert_a_avatar_into_js(avatar)
-    # profile_tags = _h.get_profile_tags(avatar.id)
     lang_profile_tag = _h.get_a_lang_profile_tag(avatar_id)
     if lang_profile_tag is None:
         lang_profile_tag = _h.create_profile_tag(avatar_id, TagId.language,
@@ -189,6 +190,8 @@ def fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
 @jwt_required
 def fetch_main_score_board_info(avatar_id=None, year_number=None,
                                 month_number=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     if month_number:
         this_avg_score = _h.get_avg_score_per_month(avatar_id, year_number,
                                                     month_number)
@@ -198,10 +201,9 @@ def fetch_main_score_board_info(avatar_id=None, year_number=None,
         this_avg_score = "0.000"
     else:
         this_avg_score = str(this_avg_score.avg_score)
-
-    if avatar_id is None:
-        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
+    if avatar is None:
+        return unauthorized(_e.USER_INVALID)
     gender_profile_tag = _h.get_a_gender_profile_tag(avatar_id)
     if gender_profile_tag is None:
         gender_profile_tag = _h.create_profile_tag(avatar_id, TagId.gender,
@@ -319,6 +321,9 @@ def download_blob(avatar_id=None, photo_name=None):
 def fetch_remaining_life_span(avatar_id=None):
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id)
+    if avatar is None:
+        return unauthorized(_e.USER_INVALID)
     today = datetime.datetime.today()
     curr_year = today.year
     curr_month = today.month
@@ -328,10 +333,9 @@ def fetch_remaining_life_span(avatar_id=None):
                                                     end_date)
     if this_avg_score is None or this_avg_score.avg_score is None:
         return unauthorized(_e.SCORE_NONE)
-    avatar = _h.get_a_avatar(avatar_id)
+
     if avatar.date_of_birth is None:
         return unauthorized(_e.BIRTH_NONE)
-
     avg_score = format(this_avg_score.avg_score, '.2f')
     str_score = avg_score.split('.')[0] + avg_score.split('.')[1]
     full_lifespan_day = _h.get_remaining_life_span(int(str_score))
@@ -618,17 +622,23 @@ def put_avatar_info():
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
+    target = data['target']
+    new_info = data['new_info']
+    try:
+        avatar_id = data['avatar_id']
+        avatar = _h.get_a_avatar(avatar_id)
+    except KeyError:
+        # Case changing new password instead of old one that forgotten.
+        avatar = _h.get_a_avatar(email=data['email'])
+        _h.update_avatar_info(avatar, target, new_info)
+        return ok()
     try:
         old_password = data['old_password']
-        avatar = _h.get_a_avatar(data['avatar_id'])
         if not b_crypt.check_password_hash(avatar.password_hash, old_password):
             return unauthorized(_e.PASS_INVALID)
-        _h.update_avatar_info(avatar, data['target'], data['new_info'])
+        _h.update_avatar_info(avatar, target, new_info)
     except KeyError:
         # If it's not attempt to change password.
-        avatar = _h.get_a_avatar(data['avatar_id'])
-        target = data['target']
-        new_info = data['new_info']
         if target == AvatarInfo.email:
             if _h.is_email_duplicated(new_info):
                 return unauthorized(_e.MAIL_DUP)
