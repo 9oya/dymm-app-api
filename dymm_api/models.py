@@ -53,7 +53,6 @@ class Tag(Base):
     id = Column(Integer, primary_key=True)
     tag_type = Column(Integer)
     is_active = Column(Boolean, nullable=False)
-    has_set = Column(Boolean, nullable=False)
     eng_name = Column(String(200))
     kor_name = Column(String(200))
     jpn_name = Column(String(200))
@@ -63,7 +62,6 @@ class Tag(Base):
     division3 = Column(SmallInteger)
     division4 = Column(SmallInteger)
     division5 = Column(SmallInteger)
-    has_low_div = Column(Boolean)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
 

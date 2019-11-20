@@ -341,7 +341,7 @@ def fetch_remaining_life_span(avatar_id=None):
     full_lifespan_day = _h.get_remaining_life_span(int(str_score))
     full_lifespan_day = int(format(full_lifespan_day, '.0f'))
 
-    # Log the full_lifespan_day into avatar table for ranking
+    # It's logging the full_lifespan_day into avatar table for ranking
     _h.update_avatar_info(avatar, AvatarInfo.full_lifespan, full_lifespan_day)
 
     date_of_birth = datetime.datetime(avatar.date_of_birth.year,
