@@ -131,7 +131,7 @@ def fetch_group_of_logs(group_id=None):
     return ok(logs_js)
 
 
-@avt_api.route('/<int:avatar_id>/group/<int:year_number>/avg-score', 
+@avt_api.route('/<int:avatar_id>/group/<int:year_number>/avg-score',
                methods=['GET'])
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
                'avg-score', methods=['GET'])
@@ -246,11 +246,12 @@ def confirm_mail_token_service(token=None):
 
 
 @tag_api.route('/<int:tag_id>/set/<sort_type>', methods=['GET'])
-@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>',
-               methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>/lang/'
+               '<int:lang_id>', methods=['GET'])
 @tag_api.route('/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/'
-               'page/<int:page>', methods=['GET'])
-def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
+               'page/<int:page>/lang/<int:lang_id>', methods=['GET'])
+def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
+                   lang_id=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
@@ -269,7 +270,12 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None):
             return ok(dict(tag=tag_js, sub_tags=bookmarks_js))
     if tag.class1 == TagClass.drug and tag.division1 != 0:
         sort_type = 'eng'
-    tag_sets = _h.get_tag_sets(tag.id, sort_type, page)
+    elif tag.class1 == TagClass.drug_abc and tag.division1 != 0:
+        sort_type = 'div'
+    if lang_id is None:
+        tag_sets = _h.get_tag_sets(tag.id, sort_type, page)
+    else:
+        tag_sets = _h.get_tag_sets(tag.id, sort_type, page, lang_id=lang_id)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
     bookmarks_total = _h.get_bookmarks_total(tag_id)
     if avatar_id:

@@ -70,6 +70,9 @@ class TagClass:
     drug = 4
     food = 5
     drug_abc = 7
+    drug_pd_us = 8
+    drug_pd_kr = 9
+    supp = 10
 
 
 class TagId:

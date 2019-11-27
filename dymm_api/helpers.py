@@ -369,23 +369,31 @@ class Helpers(object):
         if super_tag.division1 == 0:
             if super_tag.class1 == TagClass.drug:
                 drug_tags = Tag.query.filter(
-                    Tag.class1 == TagClass.drug_abc,
+                    # Tag.class1 == TagClass.drug_abc,
+                    or_(Tag.class1 == TagClass.drug_abc,
+                        Tag.class1 == TagClass.drug_pd_us,
+                        Tag.class1 == TagClass.drug_pd_kr,
+                        Tag.class1 == TagClass.supp),
                     Tag.division1 != 0,
                     Tag.division2 != 0,
                     func.lower(tag_name).contains(keyword.lower(),
                                                   autoescape=True),
                     Tag.is_active == True
-                ).paginate(page, (per_page / 2), False).items
-                supp_tags = Tag.query.filter(
-                    Tag.class1 == TagClass.food,
-                    Tag.division1 == 20,  # 20: Supplements
-                    Tag.division2 != 0,
-                    func.lower(tag_name).contains(keyword.lower(),
-                                                  autoescape=True),
-                    Tag.is_active == True
-                ).paginate(page, (per_page / 2), False).items
-                # supp_tags.extend(drug_tags)
-                drug_tags.extend(supp_tags)
+                ).order_by(
+                    Tag.class1,
+                    Tag.division1,
+                    Tag.eng_name
+                ).paginate(page, per_page, False).items
+                # supp_tags = Tag.query.filter(
+                #     Tag.class1 == TagClass.food,
+                #     Tag.division1 == 20,  # 20: Supplements
+                #     Tag.division2 != 0,
+                #     func.lower(tag_name).contains(keyword.lower(),
+                #                                   autoescape=True),
+                #     Tag.is_active == True
+                # ).paginate(page, (per_page / 2), False).items
+                # # supp_tags.extend(drug_tags)
+                # drug_tags.extend(supp_tags)
                 return drug_tags
             if super_tag.class1 == TagClass.food:
                 tags = Tag.query.filter(
@@ -418,7 +426,9 @@ class Helpers(object):
             if super_tag.class1 == TagClass.drug:
                 # TODO: - Need to adjust TagSet
                 drug_tags = Tag.query.filter(
-                    Tag.class1 == TagClass.drug_abc,
+                    # Tag.class1 == TagClass.drug_abc,
+                    or_(Tag.class1 == TagClass.drug_abc,
+                        Tag.class1 == TagClass.drug_pd_us),
                     Tag.division1 != 0,
                     Tag.division2 != 0,
                     func.lower(tag_name).contains(keyword.lower(),
@@ -666,7 +676,8 @@ class Helpers(object):
         return tag_logs
 
     @staticmethod
-    def get_tag_sets(super_id: int, sort_type, page=None, per_page=40):
+    def get_tag_sets(super_id: int, sort_type, page=None, per_page=40,
+                     lang_id=None):
         if sort_type == 'eng':
             if page:
                 tag_sets = TagSet.query.join(TagSet.sub).filter(
@@ -719,6 +730,87 @@ class Helpers(object):
                 TagSet.super_id == super_id,
                 TagSet.is_active == True
             ).order_by(TagSet.priority.desc()).all()
+        elif sort_type == 'div':
+            if lang_id == TagId.eng:
+                # Case us drugs
+                if page:
+                    tag_sets = TagSet.query.join(TagSet.sub).filter(
+                        TagSet.super_id == super_id,
+                        TagSet.is_active == True,
+                        Tag.class1 != 9
+                    ).order_by(
+                        Tag.class1,
+                        Tag.division1,
+                        Tag.division2,
+                        Tag.division3,
+                        Tag.division4,
+                        Tag.division5
+                    ).paginate(page, per_page, False).items
+                    return tag_sets
+                tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(
+                    Tag.class1,
+                    Tag.division1,
+                    Tag.division2,
+                    Tag.division3,
+                    Tag.division4,
+                    Tag.division5
+                ).all()
+                return tag_sets
+            elif lang_id == TagId.kor:
+                # Case kr drugs
+                if page:
+                    tag_sets = TagSet.query.join(TagSet.sub).filter(
+                        TagSet.super_id == super_id,
+                        TagSet.is_active == True,
+                        Tag.class1 != 8
+                    ).order_by(
+                        Tag.class1,
+                        Tag.division1,
+                        Tag.division2,
+                        Tag.division3,
+                        Tag.division4,
+                        Tag.division5
+                    ).paginate(page, per_page, False).items
+                    return tag_sets
+                tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(
+                    Tag.class1,
+                    Tag.division1,
+                    Tag.division2,
+                    Tag.division3,
+                    Tag.division4,
+                    Tag.division5
+                ).all()
+                return tag_sets
+            if page:
+                tag_sets = TagSet.query.join(TagSet.sub).filter(
+                    TagSet.super_id == super_id,
+                    TagSet.is_active == True
+                ).order_by(
+                    Tag.class1,
+                    Tag.division1,
+                    Tag.division2,
+                    Tag.division3,
+                    Tag.division4,
+                    Tag.division5
+                ).paginate(page, per_page, False).items
+                return tag_sets
+            tag_sets = db_session.query(TagSet).join(TagSet.sub).filter(
+                TagSet.super_id == super_id,
+                TagSet.is_active == True
+            ).order_by(
+                Tag.class1,
+                Tag.division1,
+                Tag.division2,
+                Tag.division3,
+                Tag.division4,
+                Tag.division5
+            ).all()
         else:
             return False
         return tag_sets
