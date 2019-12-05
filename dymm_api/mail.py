@@ -59,3 +59,13 @@ def send_verif_mail(mail_address):
                                    verif_code=verif_code.upper())
     message.subject = "Dymm Account Verification"
     mail.send(message)
+
+
+def send_opinion_mail(data):
+    message = Message()
+    # TODO: message.add_recipient(email_address)
+    message.add_recipient('eido9oya@dymm.io')
+    message.html = render_template('mail_user_opinion.html', data=data)
+    message.subject = "Opinion from tag: {0} user: {1}".format(data["tag"].id,
+                                                               data["avatar"].id)
+    mail.send(message)

@@ -222,3 +222,19 @@ class Schema:
         "required": ["avatar_id"],
         "additionalProperties": False
     }
+    mail_user_opinion = {
+        "type": "object",
+        "properties": {
+            "avatar_id": {
+                "type": "integer"
+            },
+            "tag_id": {
+                "type": "integer"
+            },
+            "opinion": {
+                "type": "string"
+            },
+        },
+        "required": ["avatar_id", "tag_id", "opinion"],
+        "additionalProperties": False
+    }

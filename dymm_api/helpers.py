@@ -167,6 +167,7 @@ class Helpers(object):
                 id=tag_log.id,
                 group_id=tag_log.group_id,
                 tag_id=tag_log.tag_id,
+                tag_type=tag_log.tag.tag_type,
                 x_val=tag_log.x_val,
                 y_val=tag_log.y_val,
                 eng_name=tag_log.tag.eng_name,

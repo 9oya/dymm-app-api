@@ -11,7 +11,7 @@ from .patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
                        BookmarkSuperTag, TagClass, TagId, AvatarInfo)
 from .schemas import Schema, validate_schema
 from .mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
-                   verify_mail_code)
+                   verify_mail_code, send_opinion_mail)
 from .helpers import Helpers, str_to_bool
 
 avt_api = Blueprint('avt_api', __name__, url_prefix='/api/avatar')
@@ -545,6 +545,28 @@ def send_mail_confirm_link_again():
     if not avatar:
         return forbidden(_e.USER_INVALID)
     send_conf_mail(avatar.email)
+    return ok()
+
+
+@mail_api.route('/opinion', methods=['POST'])
+@jwt_required
+def send_user_opinion_mail():
+    result = validate_schema(request.get_json(), _s.mail_user_opinion)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    try:
+        avatar_id = data['avatar_id']
+        tag_id = data['tag_id']
+        opinion = data['opinion']
+    except KeyError:
+        return bad_req(_m.BAD_PARAM)
+    avatar = _h.get_a_avatar(avatar_id=avatar_id)
+    if not avatar:
+        return forbidden(_e.USER_INVALID)
+    tag = _h.get_a_tag(tag_id)
+    data = dict(tag=tag, avatar=avatar, opinion=opinion)
+    send_opinion_mail(data=data)
     return ok()
 
 
