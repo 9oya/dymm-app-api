@@ -441,12 +441,12 @@ def refresh_access_token():
 def find_old_email(option=None):
     result = validate_schema(request.get_json(), _s.avatar_email)
     if not result['ok']:
-        return bad_req(result['message'])
+        return unauthorized(_e.CODE_INVALID)
     data = result['data']
     try:
         email = data['email']
     except KeyError:
-        return bad_req(_m.EMPTY_PARAM.format('email'))
+        return unauthorized(_e.CODE_INVALID)
     if option == 'find':
         if _h.is_email_duplicated(email):
             return ok()
