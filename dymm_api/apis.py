@@ -334,7 +334,8 @@ def fetch_remaining_life_span(avatar_id=None):
     curr_year = today.year
     curr_month = today.month
     start_date = "{0}-{1}-{2}".format(curr_year - 1, curr_month, 1)
-    end_date = "{0}-{1}-{2}".format(curr_year, curr_month, today.day)
+    # curr_year + 1 : Consider the time difference between countries.
+    end_date = "{0}-{1}-{2}".format(curr_year + 1, curr_month, today.day)
     this_avg_score = _h.get_avg_score_between_dates(avatar_id, start_date,
                                                     end_date)
     if this_avg_score is None or this_avg_score.avg_score is None:
