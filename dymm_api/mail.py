@@ -39,23 +39,20 @@ def verify_mail_code(verif_code: str):
 
 def send_conf_mail(mail_address):
     message = Message()
-    # TODO: message.add_recipient(email_address)
-    message.add_recipient('eslee004@gmail.com')
-    # message.add_recipient('eido9oya@dymm.io')
+    message.add_recipient(mail_address)
     mail_token = generate_confirmation_token(mail_address)
     uri = _u.HOST + '/api/mail/conf/' + mail_token
     message.html = render_template('mail_conf_msg.html', uri=uri)
-    message.subject = "Confirm your account on Dymm"
+    message.subject = "Verify your Dymm email address"
     mail.send(message)
 
 
 def send_verif_mail(mail_address):
     message = Message()
-    # TODO: message.add_recipient(email_address)
-    message.add_recipient('eslee004@gmail.com')
-    # message.add_recipient('eido9oya@dymm.io')
+    message.add_recipient(mail_address)
     verif_code = generate_verification_code(mail_address)
     message.html = render_template('mail_verification.html',
+                                   mail_address=mail_address,
                                    verif_code=verif_code.upper())
     message.subject = "Dymm Account Verification"
     mail.send(message)
@@ -63,7 +60,6 @@ def send_verif_mail(mail_address):
 
 def send_opinion_mail(data):
     message = Message()
-    # TODO: message.add_recipient(email_address)
     message.add_recipient('eido9oya@dymm.io')
     message.html = render_template('mail_user_opinion.html', data=data)
     message.subject = "Opinion from tag: {0} user: {1}".format(data["tag"].id,

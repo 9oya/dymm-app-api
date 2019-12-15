@@ -1,6 +1,21 @@
-<p>Welcome! Thanks for signing up. Please follow this link to activate your account:</p>
-<p>
-<H1>{{ verif_code }}</H1>
-<br>
-
-<p>Cheers!</p>
+<span style="font-size:24px;color:lightseagreen;font-family:Arial,Helvetica,sans-serif;font-weight:bold">
+    Hello {{ mail_address }}
+</span>
+<div style="padding-top:12px;font-size:17px;color:mediumslateblue;font-family:Arial,Helvetica,sans-serif;font-weight:bold">
+    Here is the code you need to change your Dymm login<br/>
+    credentials:
+</div>
+<br/><br/>
+<span style="font-size:24px;color:lightseagreen;font-family:Arial,Helvetica,sans-serif;font-weight:bold">
+    {{ verif_code }}
+</span>
+<br><br><br>
+<div style="padding:20px;font-size:12px;line-height:17px;color:darkgray;font-family:Arial,Helvetica,sans-serif">
+    If you are not trying to change your Dymm login credentials, please ignore this<br/>
+    email. It is possible that another user entered their login information incorrectly.
+</div>
+<br/>
+<div style="font-size:12px;color:mediumslateblue;padding-top:16px;padding-bottom:60px">
+    Dymm ©<br/>
+    <a href="https://dymm.io/" style="color:#8f98a0">https://dymm.io/</a>
+</div>
