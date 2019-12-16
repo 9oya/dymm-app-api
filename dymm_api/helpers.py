@@ -1,4 +1,5 @@
-import os, random, re, datetime
+import os, random, re, datetime, calendar
+from datetime import datetime as dt
 
 from flask_jwt_extended import create_access_token, create_refresh_token
 from sqlalchemy import text, func, and_, or_
@@ -92,6 +93,7 @@ class Helpers(object):
                                                  avatar.date_of_birth.day)
         else:
             date_of_birth = None
+        fr_ex_date = avatar.created_timestamp + datetime.timedelta(days=7)
         _js = dict(
             id=avatar.id,
             is_blocked=avatar.is_blocked,
@@ -104,6 +106,10 @@ class Helpers(object):
             photo_name=avatar.photo_name,
             introudction=avatar.introduction,
             date_of_birth=date_of_birth,
+            free_exp_date='{0}-{1}-{2}'.format(fr_ex_date.year,
+                                               fr_ex_date.month,
+                                               fr_ex_date.day),
+            is_free_trial=fr_ex_date >= dt.utcnow(),
             access_token=create_access_token(
                 identity=dict(email=avatar.email), fresh=True
             ),

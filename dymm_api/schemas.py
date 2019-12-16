@@ -238,3 +238,13 @@ class Schema:
         "required": ["avatar_id", "tag_id", "opinion"],
         "additionalProperties": False
     }
+    receipt_data = {
+        "type": "object",
+        "properties": {
+            "receipt_data": {
+                "type": "string"
+            }
+        },
+        "required": ["receipt_data"],
+        "additionalProperties": False
+    }

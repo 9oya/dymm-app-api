@@ -1,9 +1,10 @@
-import os, datetime, pytz
+import os, datetime, pytz, requests
 from flask import request, render_template, Blueprint, send_file, send_from_directory
 from flask_jwt_extended import (create_access_token, get_jwt_identity,
                                 jwt_refresh_token_required, jwt_required)
 from google.cloud import storage
 import tempfile
+from inapppy import AppStoreValidator, InAppPyValidationError
 
 from dymm_api import b_crypt
 from .errors import ok, forbidden, bad_req, unauthorized
@@ -640,6 +641,39 @@ def upload_profile_image(avatar_id=None):
     # The public URL can be used to directly access the uploaded file via HTTP.
     print(blob.public_url)
     return blob.public_url
+
+
+@avt_api.route('/receipt', methods=['POST'])
+@jwt_required
+def verify_apple_receipt():
+    result = validate_schema(request.get_json(), _s.receipt_data)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    receipt = data['receipt_data']
+    bundle_id = 'com.9oya.Dymm'
+    shared_secret = '6be41dc52be84d78ba58cf74d3b13af0'
+    auto_retry_wrong_env_request = True
+    # if True, automatically query sandbox endpoint if
+    # validation fails on production endpoint
+    validator = AppStoreValidator(
+        bundle_id,
+        auto_retry_wrong_env_request=auto_retry_wrong_env_request
+    )
+    try:
+        exclude_old_transactions = False  # if True, include only the latest renewal transaction
+        validation_result = validator.validate(
+            receipt,
+            shared_secret,
+            exclude_old_transactions=exclude_old_transactions
+        )
+        print(validation_result)
+        return ok(True)
+    except InAppPyValidationError as ex:
+        # handle validation error
+        response_from_apple = ex.raw_response  # contains actual response from AppStore service.
+        print(response_from_apple)
+        return ok(False)
 
 
 # PUT services
