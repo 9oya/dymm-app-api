@@ -247,12 +247,13 @@ def confirm_mail_token_service(token=None):
 
 
 @tag_api.route('/<int:tag_id>/set/<sort_type>', methods=['GET'])
-@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>/lang/'
-               '<int:lang_id>', methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>/<int:per_page>'
+               '/lang/<int:lang_id>', methods=['GET'])
 @tag_api.route('/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/'
-               'page/<int:page>/lang/<int:lang_id>', methods=['GET'])
+               'page/<int:page>/<int:per_page>/lang/<int:lang_id>',
+               methods=['GET'])
 def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
-                   lang_id=None):
+                   per_page=None, lang_id=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
@@ -274,9 +275,10 @@ def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
     elif tag.class1 == TagClass.drug_abc and tag.division1 != 0:
         sort_type = 'div'
     if lang_id is None:
-        tag_sets = _h.get_tag_sets(tag.id, sort_type, page)
+        tag_sets = _h.get_tag_sets(tag.id, sort_type, page, per_page=per_page)
     else:
-        tag_sets = _h.get_tag_sets(tag.id, sort_type, page, lang_id=lang_id)
+        tag_sets = _h.get_tag_sets(tag.id, sort_type, page, per_page=per_page,
+                                   lang_id=lang_id)
     tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
     bookmarks_total = _h.get_bookmarks_total(tag_id)
     if avatar_id:
@@ -572,8 +574,9 @@ def send_user_opinion_mail():
     return ok()
 
 
-@tag_api.route('/<int:tag_id>/search/page/<int:page>', methods=['POST'])
-def search_tags(tag_id=None, page=None):
+@tag_api.route('/<int:tag_id>/search/page/<int:page>/<int:per_page>',
+               methods=['POST'])
+def search_tags(tag_id=None, page=None, per_page=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     if page is None:
@@ -585,7 +588,7 @@ def search_tags(tag_id=None, page=None):
     super_tag = _h.get_a_tag(tag_id)
     tag_js = _h.convert_a_tag_into_js(super_tag)
     tags = _h.search_low_div_tags_from_up_div_tag(super_tag, data['key_word'],
-                                                  page)
+                                                  page, per_page)
     tags_js = _h.convert_tags_into_js(tags)
     return ok(dict(tag=tag_js, sub_tags=tags_js))
 
@@ -653,7 +656,7 @@ def verify_apple_receipt():
     receipt = data['receipt_data']
     bundle_id = 'com.9oya.Dymm'
     shared_secret = '6be41dc52be84d78ba58cf74d3b13af0'
-    auto_retry_wrong_env_request = True
+    auto_retry_wrong_env_request = True  # TODO: False
     # if True, automatically query sandbox endpoint if
     # validation fails on production endpoint
     validator = AppStoreValidator(
