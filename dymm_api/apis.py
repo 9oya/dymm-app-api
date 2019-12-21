@@ -247,13 +247,60 @@ def confirm_mail_token_service(token=None):
 
 
 @tag_api.route('/<int:tag_id>/set/<sort_type>', methods=['GET'])
-@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>/<int:per_page>'
-               '/lang/<int:lang_id>', methods=['GET'])
+@tag_api.route('/<int:tag_id>/set/<sort_type>/page/<int:page>/lang/'
+               '<int:lang_id>', methods=['GET'])
 @tag_api.route('/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/'
+               'page/<int:page>/lang/<int:lang_id>', methods=['GET'])
+def old_fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
+                       lang_id=None):
+    if tag_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    tag = _h.get_a_tag(tag_id)
+    tag_js = _h.convert_a_tag_into_js(tag)
+    if avatar_id and tag.tag_type == TagType.history:
+        log_histories = _h.get_log_histories(avatar_id)
+        log_histories_js = _h.convert_log_histories_into_js(log_histories)
+        return ok(dict(tag=tag_js, sub_tags=log_histories_js))
+    if avatar_id and tag.tag_type == TagType.bookmark:
+        if (tag.id == BookmarkSuperTag.food
+                or tag.id == BookmarkSuperTag.activity
+                or tag.id == BookmarkSuperTag.drug
+                or tag.id == BookmarkSuperTag.condition):
+            bookmarks = _h.get_bookmarks(avatar_id, tag.id)
+            bookmarks_js = _h.convert_bookmarks_into_js(bookmarks)
+            return ok(dict(tag=tag_js, sub_tags=bookmarks_js))
+    if tag.class1 == TagClass.drug and tag.division1 != 0:
+        sort_type = 'eng'
+    elif tag.class1 == TagClass.drug_abc and tag.division1 != 0:
+        sort_type = 'div'
+    if lang_id is None:
+        tag_sets = _h.get_tag_sets(tag.id, sort_type, page)
+    else:
+        tag_sets = _h.get_tag_sets(tag.id, sort_type, page, lang_id=lang_id)
+    tag_sets_js = _h.convert_tag_sets_into_js(tag_sets)
+    bookmarks_total = _h.get_bookmarks_total(tag_id)
+    if avatar_id:
+        if (tag.tag_type == TagType.food
+                or tag.tag_type == TagType.activity
+                or tag.tag_type == TagType.drug
+                or tag.tag_type == TagType.condition):
+            bookmark = _h.get_a_bookmark(avatar_id=avatar_id, tag_id=tag_id)
+            if bookmark:
+                return ok(dict(tag=tag_js, sub_tags=tag_sets_js,
+                               bookmark_id=bookmark.id,
+                               bookmarks_total=bookmarks_total))
+    return ok(dict(tag=tag_js, sub_tags=tag_sets_js,
+                   bookmarks_total=bookmarks_total))
+
+
+@tag_api.route('/new/<int:tag_id>/set/<sort_type>', methods=['GET'])
+@tag_api.route('/new/<int:tag_id>/set/<sort_type>/page/<int:page>/<int:per_page>'
+               '/lang/<int:lang_id>', methods=['GET'])
+@tag_api.route('/new/<int:tag_id>/set/<sort_type>/avt/<int:avatar_id>/'
                'page/<int:page>/<int:per_page>/lang/<int:lang_id>',
                methods=['GET'])
-def fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
-                   per_page=None, lang_id=None):
+def new_fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
+                       per_page=None, lang_id=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     tag = _h.get_a_tag(tag_id)
@@ -574,9 +621,27 @@ def send_user_opinion_mail():
     return ok()
 
 
-@tag_api.route('/<int:tag_id>/search/page/<int:page>/<int:per_page>',
+@tag_api.route('/<int:tag_id>/search/page/<int:page>', methods=['POST'])
+def old_search_tags(tag_id=None, page=None):
+    if tag_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('tag_id'))
+    if page is None:
+        return bad_req(_m.EMPTY_PARAM.format('page'))
+    result = validate_schema(request.get_json(), _s.search_key_word)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    super_tag = _h.get_a_tag(tag_id)
+    tag_js = _h.convert_a_tag_into_js(super_tag)
+    tags = _h.search_low_div_tags_from_up_div_tag(super_tag, data['key_word'],
+                                                  page)
+    tags_js = _h.convert_tags_into_js(tags)
+    return ok(dict(tag=tag_js, sub_tags=tags_js))
+
+
+@tag_api.route('/new/<int:tag_id>/search/page/<int:page>/<int:per_page>',
                methods=['POST'])
-def search_tags(tag_id=None, page=None, per_page=None):
+def new_search_tags(tag_id=None, page=None, per_page=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('tag_id'))
     if page is None:
