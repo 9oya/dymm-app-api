@@ -344,7 +344,23 @@ def new_fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
 
 @tag_api.route('/<int:tag_id>/set/match/<is_selected>', methods=['GET'])
 @jwt_required
-def fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
+def old_fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
+    if tag_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('fact_id'))
+    if not str_to_bool(is_selected):
+        tag_sets = _h.get_tag_sets(tag_id, 'priority')
+        tags_js, matching_idx = _h.convert_tag_sets_into_js_add_idx(
+            tag_sets, tag_id)
+        return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
+    super_tag = _h.get_a_super_tag(tag_id)
+    tag_sets = _h.get_tag_sets(super_tag.id, 'priority')
+    tags_js, matching_idx = _h.convert_tag_sets_into_js_add_idx(
+        tag_sets, tag_id)
+    return ok(dict(sub_tags=tags_js, select_idx=matching_idx))
+
+
+@tag_api.route('/new/<int:tag_id>/set/match/<is_selected>', methods=['GET'])
+def new_fetch_tag_sets_w_matching_idx(tag_id=None, is_selected=None):
     if tag_id is None:
         return bad_req(_m.EMPTY_PARAM.format('fact_id'))
     if not str_to_bool(is_selected):
