@@ -516,12 +516,14 @@ class Helpers(object):
         if avatar_id is None:
             avatar = Avatar.query.filter(
                 Avatar.email == email,
-                Avatar.is_active == True
+                Avatar.is_active == True,
+                Avatar.is_blocked == False
             ).first()
             return avatar
         avatar = Avatar.query.filter(
             Avatar.id == avatar_id,
-            Avatar.is_active == True
+            Avatar.is_active == True,
+            Avatar.is_blocked == False
         ).first()
         return avatar
 
@@ -970,6 +972,16 @@ class Helpers(object):
         return log_histories
 
     @staticmethod
+    def new_get_log_histories(avatar_id, page, per_page):
+        log_histories = LogHistory.query.filter(
+            LogHistory.avatar_id == avatar_id,
+            LogHistory.is_active == True
+        ).order_by(
+            LogHistory.modified_timestamp.desc()
+        ).paginate(page, per_page, False).items
+        return log_histories
+
+    @staticmethod
     def get_a_lifespan_ranking(avatar_id, age_range):
         today = datetime.datetime.today()
         start_date = '1900-1-1'
@@ -1065,6 +1077,8 @@ class Helpers(object):
                     order_by=Avatar.full_lifespan.desc()
                 ).label('rnk')
             ).filter(
+                Avatar.is_active == True,
+                Avatar.is_blocked == False,
                 Avatar.full_lifespan > 0,
                 and_(Avatar.date_of_birth >= start_date,
                      Avatar.date_of_birth <= end_date)
@@ -1081,6 +1095,8 @@ class Helpers(object):
                     order_by=Avatar.full_lifespan.desc()
                 ).label('rnk')
             ).filter(
+                Avatar.is_active == True,
+                Avatar.is_blocked == False,
                 Avatar.full_lifespan > 0
             ).subquery()
 

@@ -306,7 +306,7 @@ def new_fetch_tag_sets(tag_id=None, sort_type=None, avatar_id=None, page=None,
     tag = _h.get_a_tag(tag_id)
     tag_js = _h.convert_a_tag_into_js(tag)
     if avatar_id and tag.tag_type == TagType.history:
-        log_histories = _h.get_log_histories(avatar_id)
+        log_histories = _h.new_get_log_histories(avatar_id, page, per_page)
         log_histories_js = _h.convert_log_histories_into_js(log_histories)
         return ok(dict(tag=tag_js, sub_tags=log_histories_js))
     if avatar_id and tag.tag_type == TagType.bookmark:
@@ -432,7 +432,7 @@ def fetch_lifespan_rankings(age_range=None, starting=None, page=None):
         return bad_req(_m.EMPTY_PARAM.format('age_range'))
     if starting is None:
         return bad_req(_m.EMPTY_PARAM.format('starting'))
-    rankings = _h.get_lifespan_rankings(age_range, starting, page, 15)
+    rankings = _h.get_lifespan_rankings(age_range, starting, page, 20)
     js_rankings = _h.convert_rankings_into_js(rankings)
     return ok(dict(rankings=js_rankings))
 
@@ -751,12 +751,12 @@ def verify_apple_receipt():
             shared_secret,
             exclude_old_transactions=exclude_old_transactions
         )
-        print(validation_result)
+        # print(validation_result)
         return ok(True)
     except InAppPyValidationError as ex:
         # handle validation error
         response_from_apple = ex.raw_response  # contains actual response from AppStore service.
-        print(response_from_apple)
+        # print(response_from_apple)
         return ok(False)
 
 
