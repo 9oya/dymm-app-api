@@ -129,13 +129,24 @@ def new_fetch_log_groups(avatar_id=None, year_forweekofyear=None, year_number=No
 
 
 @avt_api.route('/<int:avatar_id>/group-note/<int:page>')
-def fetch_log_group_notes(avatar_id=None, page=None):
+def old_fetch_log_group_notes(avatar_id=None, page=None):
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     if page is None:
         bad_req(_m.EMPTY_PARAM.format('page'))
     log_groups = _h.get_log_group_notes(avatar_id, page)
     log_groups_js = _h.convert_log_groups_into_js(log_groups)
+    return ok(log_groups_js)
+
+
+@avt_api.route('/new/<int:avatar_id>/group-note/<int:page>')
+def new_fetch_log_group_notes(avatar_id=None, page=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if page is None:
+        bad_req(_m.EMPTY_PARAM.format('page'))
+    log_groups = _h.get_log_group_notes(avatar_id, page)
+    log_groups_js = _h.new_convert_log_groups_into_js(log_groups)
     return ok(log_groups_js)
 
 
