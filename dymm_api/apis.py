@@ -223,6 +223,60 @@ def fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
     ))
 
 
+@avt_api.route('/new/<int:avatar_id>/group/<int:year_number>/avg-score',
+               methods=['GET'])
+@avt_api.route('/new/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'
+               'avg-score', methods=['GET'])
+@avt_api.route('/new/<int:avatar_id>/group/<int:year_forweekofyear>/'
+               '<int:month_number>/<int:week_of_year>/avg-score',
+               methods=['GET'])
+@jwt_required
+def new_fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
+                                       year_forweekofyear=None,
+                                       month_number=None,
+                                       week_of_year=None):
+    if month_number is None:
+        avg_score = _h.get_avg_score_per_year(avatar_id, year_number)
+        if avg_score.avg_score is None:
+            this_avg = "0.000"
+        else:
+            this_avg = str(avg_score.avg_score)
+        return ok(dict(
+            this_avg_score=this_avg
+        ))
+    if week_of_year:
+        this_avg = _h.new_get_avg_score_per_week(avatar_id, year_forweekofyear,
+                                                 week_of_year)
+        if week_of_year == 1:
+            week_of_year = 52
+            year_forweekofyear -= 1
+        else:
+            week_of_year -= 1
+        last_avg = _h.new_get_avg_score_per_week(avatar_id, year_forweekofyear,
+                                                 week_of_year)
+    else:
+        this_avg = _h.get_avg_score_per_month(avatar_id, year_number,
+                                              month_number)
+        if month_number == 1:
+            year_number -= year_number
+            month_number = 12
+        else:
+            month_number -= 1
+        last_avg = _h.get_avg_score_per_month(avatar_id, year_number, month_number)
+    if this_avg.avg_score is None:
+        this_avg = "0.000"
+    else:
+        this_avg = str(this_avg.avg_score)
+    if last_avg.avg_score is None:
+        last_avg = "0.000"
+    else:
+        last_avg = str(last_avg.avg_score)
+    return ok(dict(
+        this_avg_score=this_avg,
+        last_avg_score=last_avg
+    ))
+
+
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/score-board',
                methods=['GET'])
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>/'

@@ -665,6 +665,18 @@ class Helpers(object):
         return avg_score
 
     @staticmethod
+    def new_get_avg_score_per_week(avatar_id, year_forweekofyear, week_of_year):
+        avg_score = LogGroup.query.with_entities(
+            func.avg(LogGroup.cond_score).label('avg_score')
+        ).filter(
+            LogGroup.avatar_id == avatar_id,
+            LogGroup.year_forweekofyear == year_forweekofyear,
+            LogGroup.week_of_year == week_of_year,
+            LogGroup.is_active == True
+        ).first()
+        return avg_score
+
+    @staticmethod
     def get_avg_score_per_year(avatar_id, year_number):
         avg_score = LogGroup.query.with_entities(
             func.avg(LogGroup.cond_score).label('avg_score')
