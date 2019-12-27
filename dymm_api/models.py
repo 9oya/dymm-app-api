@@ -117,6 +117,7 @@ class LogGroup(Base):
     id = Column(Integer, primary_key=True)
     avatar_id = Column(ForeignKey('avatar.id', ondelete='CASCADE'), nullable=False, index=True)
     year_number = Column(SmallInteger, nullable=False)
+    year_forweekofyear = Column(SmallInteger)
     month_number = Column(SmallInteger, nullable=False)
     week_of_year = Column(SmallInteger, nullable=False)
     day_of_year = Column(SmallInteger, nullable=False)

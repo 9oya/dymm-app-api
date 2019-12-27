@@ -151,6 +151,60 @@ class Schema:
                      "y_val", "log_date"],
         "additionalProperties": False
     }
+    new_create_log = {
+        "type": "object",
+        "properties": {
+            "avatar_id": {
+                "type": "integer"
+            },
+            "tag_id": {
+                "type": "integer"
+            },
+            "year_number": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "year_forweekofyear": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "month_number": {
+                "type": "integer",
+                "pattern": "[1-12]"
+            },
+            "week_of_year": {
+                "type": "integer",
+                "pattern": "[1-54]"
+            },
+            "day_of_year": {
+                "type": "integer",
+                "pattern": "[1-365]"
+            },
+            "group_type": {
+                "type": "integer",
+                "pattern": "[1-4]"
+            },
+            "x_val": {
+                "type": "integer"
+            },
+            "y_val": {
+                "type": "integer"
+            },
+            "log_group_id": {
+                "type": "integer"
+            },
+            "log_date": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 10,
+                "pattern": "^\d{4}\-\d{1,2}\-\d{1,2}$"
+            }
+        },
+        "required": ["avatar_id", "tag_id", "year_number", "month_number",
+                     "week_of_year", "day_of_year", "group_type", "x_val",
+                     "y_val", "log_date"],
+        "additionalProperties": False
+    }
     create_avatar_cond = {
         "type": "object",
         "properties": {

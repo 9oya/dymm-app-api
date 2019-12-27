@@ -79,8 +79,8 @@ def fetch_avatar_cond_list(avatar_id=None):
 @avt_api.route('/<int:avatar_id>/group/<int:year_number>/<int:month_number>',
                methods=['GET'])
 @jwt_required
-def fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
-                     week_of_year=None):
+def old_fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
+                         week_of_year=None):
     if not avatar_id:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     if not year_number:
@@ -97,6 +97,34 @@ def fetch_log_groups(avatar_id=None, year_number=None, month_number=None,
     log_groups = _h.get_log_groups(avatar_id, year_number, month_number,
                                    week_of_year)
     log_groups_js = _h.convert_log_groups_into_js(log_groups)
+    return ok(log_groups_js)
+
+
+@avt_api.route('/new/<int:avatar_id>/group/<int:year_forweekofyear>/'
+               '<int:month_number>/<int:week_of_year>', methods=['GET'])
+@avt_api.route('/new/<int:avatar_id>/group/<int:year_number>/<int:month_number>',
+               methods=['GET'])
+@jwt_required
+def new_fetch_log_groups(avatar_id=None, year_forweekofyear=None, year_number=None,
+                         month_number=None, week_of_year=None):
+    if not avatar_id:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    if year_number:
+        if len(str(year_number)) != 4 or year_number < 1960:
+            return bad_req(_m.BAD_PARAM.format('year_number'))
+    if year_forweekofyear:
+        if len(str(year_forweekofyear)) != 4 or year_forweekofyear < 1960:
+            return bad_req(_m.BAD_PARAM.format('year_forweekofyear'))
+    if not month_number:
+        return bad_req(_m.EMPTY_PARAM.format('month_number'))
+    if month_number < 1 or month_number > 12:
+        return bad_req(_m.BAD_PARAM.format('month_number'))
+    if week_of_year:
+        if week_of_year < 1 or week_of_year > 54:
+            return bad_req(_m.BAD_PARAM.format('week_of_year'))
+    log_groups = _h.new_get_log_groups(avatar_id, year_number, month_number,
+                                       week_of_year, year_forweekofyear)
+    log_groups_js = _h.new_convert_log_groups_into_js(log_groups)
     return ok(log_groups_js)
 
 
@@ -582,12 +610,29 @@ def post_bookmark():
 
 @avt_api.route('/log', methods=['POST'])
 @jwt_required
-def post_new_log():
+def old_post_new_log():
     result = validate_schema(request.get_json(), _s.create_log)
     if not result['ok']:
         return bad_req(result['message'])
     data = result['data']
     _h.create_log(data)
+    log_history = _h.get_a_log_history_even_inactive(data['avatar_id'],
+                                                     data['tag_id'])
+    if log_history:
+        _h.update_log_history_date(log_history)
+    else:
+        _h.create_a_log_history(data['avatar_id'], data['tag_id'])
+    return ok()
+
+
+@avt_api.route('/new/log', methods=['POST'])
+@jwt_required
+def new_post_new_log():
+    result = validate_schema(request.get_json(), _s.new_create_log)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    _h.new_create_log(data)
     log_history = _h.get_a_log_history_even_inactive(data['avatar_id'],
                                                      data['tag_id'])
     if log_history:

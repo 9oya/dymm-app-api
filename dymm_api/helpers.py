@@ -166,6 +166,28 @@ class Helpers(object):
         return _js_list
 
     @staticmethod
+    def new_convert_log_groups_into_js(log_groups: [LogGroup]) -> list:
+        _js_list = list()
+        for log_group in log_groups:
+            _js = dict(
+                id=log_group.id,
+                year_number=log_group.year_number,
+                year_forweekofyear=log_group.year_forweekofyear,
+                month_number=log_group.month_number,
+                week_of_year=log_group.week_of_year,
+                day_of_year=log_group.day_of_year,
+                group_type=log_group.group_type,
+                day_number=log_group.log_date.day,
+                food_cnt=log_group.food_cnt,
+                act_cnt=log_group.act_cnt,
+                drug_cnt=log_group.drug_cnt,
+                cond_score=log_group.cond_score,
+                note=log_group.note
+            )
+            _js_list.append(_js)
+        return _js_list
+
+    @staticmethod
     def convert_tag_logs_into_js(tag_logs: [TagLog]) -> [dict]:
         _js_list = list()
         for tag_log in tag_logs:
@@ -571,6 +593,33 @@ class Helpers(object):
         log_groups = LogGroup.query.filter(
             LogGroup.avatar_id == avatar_id,
             LogGroup.year_number == year_number,
+            LogGroup.week_of_year == week_of_year,
+            LogGroup.is_active == True
+        ).order_by(
+            LogGroup.day_of_year.desc(),
+            LogGroup.group_type.desc()
+        ).all()
+        return log_groups
+
+    @staticmethod
+    def new_get_log_groups(avatar_id, year_number=None, month_number=None,
+                           week_of_year=None, year_forweekofyear=None):
+        if week_of_year is None:
+            # Get Monthly
+            log_groups = LogGroup.query.filter(
+                LogGroup.avatar_id == avatar_id,
+                LogGroup.year_number == year_number,
+                LogGroup.month_number == month_number,
+                LogGroup.is_active == True
+            ).order_by(
+                LogGroup.day_of_year.desc(),
+                LogGroup.group_type.desc()
+            ).all()
+            return log_groups
+        # Get Weekly
+        log_groups = LogGroup.query.filter(
+            LogGroup.avatar_id == avatar_id,
+            LogGroup.year_forweekofyear == year_forweekofyear,
             LogGroup.week_of_year == week_of_year,
             LogGroup.is_active == True
         ).order_by(
@@ -1157,6 +1206,64 @@ class Helpers(object):
                 avatar_id=data['avatar_id'],
                 group_type=data['group_type'],
                 year_number=data['year_number'],
+                month_number=data['month_number'],
+                week_of_year=data['week_of_year'],
+                day_of_year=data['day_of_year'],
+                log_date=data['log_date'],
+                is_active=True,
+                food_cnt=food_cnt,
+                act_cnt=act_cnt,
+                drug_cnt=drug_cnt,
+            )
+            db_session.add(new_log_group)
+            db_session.commit()
+            log_group_id = new_log_group.id
+        else:
+            # Existed log group
+            log_group = LogGroup.query.filter(
+                LogGroup.id == log_group_id,
+                LogGroup.avatar_id == data['avatar_id'],
+                LogGroup.is_active == True
+            ).first()
+            if tag.tag_type == TagType.food:
+                log_group.food_cnt += 1
+            elif tag.tag_type == TagType.activity:
+                log_group.act_cnt += 1
+            elif tag.tag_type == TagType.drug:
+                log_group.drug_cnt += 1
+        new_tag_log = TagLog(
+            group_id=log_group_id,
+            tag_id=tag.id,
+            is_active=True,
+            x_val=data['x_val'],
+            y_val=data['y_val']
+        )
+        db_session.add(new_tag_log)
+        db_session.commit()
+
+    @staticmethod
+    def new_create_log(data):
+        tag = Helpers.get_a_tag(data['tag_id'])
+        try:
+            log_group_id = data['log_group_id']
+        except KeyError:
+            log_group_id = None
+        if log_group_id is None:
+            # Create new log group
+            food_cnt = 0
+            act_cnt = 0
+            drug_cnt = 0
+            if tag.tag_type == TagType.food:
+                food_cnt = 1
+            elif tag.tag_type == TagType.activity:
+                act_cnt = 1
+            elif tag.tag_type == TagType.drug:
+                drug_cnt = 1
+            new_log_group = LogGroup(
+                avatar_id=data['avatar_id'],
+                group_type=data['group_type'],
+                year_number=data['year_number'],
+                year_forweekofyear=data['year_forweekofyear'],
                 month_number=data['month_number'],
                 week_of_year=data['week_of_year'],
                 day_of_year=data['day_of_year'],
