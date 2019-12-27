@@ -258,7 +258,7 @@ def new_fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
         this_avg = _h.get_avg_score_per_month(avatar_id, year_number,
                                               month_number)
         if month_number == 1:
-            year_number -= year_number
+            year_number -= 1
             month_number = 12
         else:
             month_number -= 1
