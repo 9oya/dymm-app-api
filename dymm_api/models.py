@@ -1,5 +1,5 @@
 from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Integer,
-                        SmallInteger, String, text, Text, CHAR)
+                        SmallInteger, String, text, Text, CHAR, BigInteger)
 from sqlalchemy.orm import relationship
 from dymm_api import db
 
@@ -27,6 +27,7 @@ class Avatar(Base):
     full_lifespan = Column(Integer)
     date_of_birth = Column(Date)
     avatar_type = Column(SmallInteger)
+    fb_id = Column(BigInteger)
 
 
 class Banner(Base):

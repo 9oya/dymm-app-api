@@ -111,6 +111,8 @@ class AvatarInfo:
     color_code = 16
     photo_name = 17
     full_lifespan = 18
+    fb_id = 19
+    avatar_type = 20
 
 
 class AvatarType:

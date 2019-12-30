@@ -6,7 +6,7 @@ from sqlalchemy import text, func, and_, or_
 
 from dymm_api import b_crypt, db
 from .patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
-                       BookmarkSuperTag, RegExPattern, TagId)
+                       BookmarkSuperTag, RegExPattern, TagId, AvatarType)
 from .models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                      ProfileTag, Tag, TagLog, TagSet)
 
@@ -39,13 +39,13 @@ class Helpers(object):
     # Validators
     # -------------------------------------------------------------------------
     @staticmethod
-    def is_email_duplicated(email) -> bool:
+    def is_email_duplicated(email):
         dup_email = Avatar.query.filter(
             Avatar.email == email,
             Avatar.is_active == True
         ).first()
         if dup_email:
-            return True
+            return dup_email
         return False
 
     @staticmethod
@@ -87,7 +87,7 @@ class Helpers(object):
 
     @staticmethod
     def convert_a_avatar_into_js(avatar: Avatar) -> dict:
-        if avatar.date_of_birth is not None:
+        if avatar.date_of_birth:
             date_of_birth = "{0}-{1}-{2}".format(avatar.date_of_birth.year,
                                                  avatar.date_of_birth.month,
                                                  avatar.date_of_birth.day)
@@ -1197,6 +1197,47 @@ class Helpers(object):
         return avatar
 
     @staticmethod
+    def create_a_fb_avatar(data):
+        try:
+            avatar = Avatar(
+                is_active=True,
+                is_admin=False,
+                is_blocked=False,
+                is_confirmed=True,
+                email=data['email'],
+                first_name=data['first_name'],
+                last_name=data['last_name'],
+                color_code=Helpers.gen_random_profile_color(),
+                avatar_type=AvatarType.facebook,
+                fb_id=data['fb_id']
+            )
+            db_session.add(avatar)
+            db_session.commit()
+        except AttributeError:
+            return False
+        return avatar
+
+    @staticmethod
+    def create_a_google_avatar(data):
+        try:
+            avatar = Avatar(
+                is_active=True,
+                is_admin=False,
+                is_blocked=False,
+                is_confirmed=True,
+                email=data['email'],
+                first_name=data['first_name'],
+                last_name=data['last_name'],
+                color_code=Helpers.gen_random_profile_color(),
+                avatar_type=AvatarType.google
+            )
+            db_session.add(avatar)
+            db_session.commit()
+        except AttributeError:
+            return False
+        return avatar
+
+    @staticmethod
     def create_log(data):
         tag = Helpers.get_a_tag(data['tag_id'])
         try:
@@ -1471,6 +1512,11 @@ class Helpers(object):
             return True
         elif target == TagId.date_of_birth:
             avatar.date_of_birth = new_info
+            avatar.modified_timestamp = text("timezone('utc'::text, now())")
+            db_session.commit()
+            return True
+        elif target == AvatarInfo.fb_id:
+            avatar.fb_id = new_info
             avatar.modified_timestamp = text("timezone('utc'::text, now())")
             db_session.commit()
             return True

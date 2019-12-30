@@ -9,7 +9,7 @@ from inapppy import AppStoreValidator, InAppPyValidationError
 from dymm_api import b_crypt
 from .errors import ok, forbidden, bad_req, unauthorized
 from .patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
-                       BookmarkSuperTag, TagClass, TagId, AvatarInfo)
+                       BookmarkSuperTag, TagClass, TagId, AvatarInfo, AvatarType)
 from .schemas import Schema, validate_schema
 from .mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
                    verify_mail_code, send_opinion_mail)
@@ -586,6 +586,51 @@ def create_new_avatar():
     avatar_js = _h.convert_a_avatar_into_js(avatar)
     auth = dict(avatar=avatar_js, language_id=data['language_id'])
     send_conf_mail(avatar.email)
+    return ok(auth)
+
+
+@avt_api.route('/fb-auth', methods=['POST'])
+def sign_with_facebook():
+    result = validate_schema(request.get_json(), _s.fb_login)
+    if not result['ok']:
+        return bad_req(result['message'].message)
+    data = result['data']
+    try:
+        dup_avatar = _h.is_email_duplicated(data['email'])
+        if dup_avatar:
+            if dup_avatar.fb_id is None or dup_avatar.fb_id <= 0:
+                _h.update_avatar_info(dup_avatar, int(AvatarInfo.fb_id),
+                                      data['fb_id'])
+            avatar_js = _h.convert_a_avatar_into_js(dup_avatar)
+            auth = dict(avatar=avatar_js, language_id=data['language_id'])
+            return ok(auth)
+    except KeyError:
+        data['email'] = data['fd_id']
+    avatar = _h.create_a_fb_avatar(data)
+    _h.create_def_profile_tags(avatar.id, data['language_id'])
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
+    return ok(auth)
+
+
+@avt_api.route('/g-auth', methods=['POST'])
+def sign_with_google():
+    result = validate_schema(request.get_json(), _s.g_login)
+    if not result['ok']:
+        return bad_req(result['message'].message)
+    data = result['data']
+    dup_avatar = _h.is_email_duplicated(data['email'])
+    if dup_avatar:
+        if dup_avatar.avatar_type is None:
+            _h.update_avatar_info(dup_avatar, int(AvatarInfo.avatar_type),
+                                  AvatarType.google)
+        avatar_js = _h.convert_a_avatar_into_js(dup_avatar)
+        auth = dict(avatar=avatar_js, language_id=data['language_id'])
+        return ok(auth)
+    avatar = _h.create_a_google_avatar(data)
+    _h.create_def_profile_tags(avatar.id, data['language_id'])
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
     return ok(auth)
 
 

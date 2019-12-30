@@ -62,6 +62,57 @@ class Schema:
                      "language_id"],
         "additionalProperties": False
     }
+    fb_login = {
+        "type": "object",
+        "properties": {
+            "fb_id": {
+                "type": "string"
+            },
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "first_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "last_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "language_id": {
+                "type": "integer"
+            }
+        },
+        "required": ["fb_id", "first_name", "last_name", "language_id"],
+        "additionalProperties": False
+    }
+    g_login = {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "first_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "last_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "language_id": {
+                "type": "integer"
+            }
+        },
+        "required": ["email", "first_name", "last_name", "language_id"],
+        "additionalProperties": False
+    }
     avatar_email = {
         "type": "object",
         "properties": {
