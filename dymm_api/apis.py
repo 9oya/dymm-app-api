@@ -195,7 +195,7 @@ def fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
                                              week_of_year)
         if week_of_year == 1:
             week_of_year = 52
-            year_number -= year_number
+            year_number -= 1
         else:
             week_of_year -= 1
         last_avg = _h.get_avg_score_per_week(avatar_id, year_number,
@@ -204,7 +204,7 @@ def fetch_log_group_avg_cond_score(avatar_id=None, year_number=None,
         this_avg = _h.get_avg_score_per_month(avatar_id, year_number,
                                               month_number)
         if month_number == 1:
-            year_number -= year_number
+            year_number -= 1
             month_number = 12
         else:
             month_number -= 1

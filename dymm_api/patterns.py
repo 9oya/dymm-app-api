@@ -111,3 +111,9 @@ class AvatarInfo:
     color_code = 16
     photo_name = 17
     full_lifespan = 18
+
+
+class AvatarType:
+    email = 1
+    facebook = 2
+    google = 3

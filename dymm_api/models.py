@@ -15,7 +15,7 @@ class Avatar(Base):
     is_blocked = Column(Boolean, nullable=False)
     is_confirmed = Column(Boolean, nullable=False)
     email = Column(String(255), nullable=False)
-    password_hash = Column(String(200), nullable=False)
+    password_hash = Column(String(200))
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     ph_number = Column(String(50))
@@ -26,6 +26,7 @@ class Avatar(Base):
     photo_name = Column(String(100))
     full_lifespan = Column(Integer)
     date_of_birth = Column(Date)
+    avatar_type = Column(SmallInteger)
 
 
 class Banner(Base):
@@ -53,9 +54,9 @@ class Tag(Base):
     id = Column(Integer, primary_key=True)
     tag_type = Column(Integer)
     is_active = Column(Boolean, nullable=False)
-    eng_name = Column(String(200))
-    kor_name = Column(String(200))
-    jpn_name = Column(String(200))
+    eng_name = Column(String(250))
+    kor_name = Column(String(250))
+    jpn_name = Column(String(250))
     class1 = Column(SmallInteger)
     division1 = Column(SmallInteger)
     division2 = Column(SmallInteger)
@@ -117,7 +118,6 @@ class LogGroup(Base):
     id = Column(Integer, primary_key=True)
     avatar_id = Column(ForeignKey('avatar.id', ondelete='CASCADE'), nullable=False, index=True)
     year_number = Column(SmallInteger, nullable=False)
-    year_forweekofyear = Column(SmallInteger)
     month_number = Column(SmallInteger, nullable=False)
     week_of_year = Column(SmallInteger, nullable=False)
     day_of_year = Column(SmallInteger, nullable=False)
@@ -131,6 +131,7 @@ class LogGroup(Base):
     note = Column(Text)
     created_timestamp = Column(DateTime, server_default=text("timezone('utc'::text, now())"))
     modified_timestamp = Column(DateTime)
+    year_forweekofyear = Column(SmallInteger)
 
     avatar = relationship('Avatar')
 
