@@ -1,5 +1,6 @@
 import os, datetime, pytz, requests
-from flask import request, render_template, Blueprint, send_file, send_from_directory
+from flask import (request, render_template, Blueprint, send_file,
+                   redirect)
 from flask_jwt_extended import (create_access_token, get_jwt_identity,
                                 jwt_refresh_token_required, jwt_required)
 from google.cloud import storage
@@ -330,14 +331,11 @@ def confirm_mail_token_service(token=None):
     if not avatar:
         return forbidden(_e.USER_INVALID)
     if avatar.is_confirmed:
-        return 'Account already confirmed. Enjoy Dymm :)'
+        return redirect("https://dymm.io/confirmed")
     if not _h.update_avatar_mail_confirm(avatar.id):
         return ('Sorry, email confirmation process has been failed :( <br/>'
                 'Please try again.')
-    return render_template(
-        'mail_conf_result.html',
-        message='Your email address has successfully confirmed!'
-    )
+    return redirect("https://dymm.io/welcome")
 
 
 @tag_api.route('/<int:tag_id>/set/<sort_type>', methods=['GET'])
