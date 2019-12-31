@@ -12,7 +12,8 @@ from .patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
                        BookmarkSuperTag, TagClass, TagId, AvatarInfo, AvatarType)
 from .schemas import Schema, validate_schema
 from .mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
-                   verify_mail_code, send_opinion_mail)
+                   verify_mail_code, send_opinion_mail, new_send_conf_mail,
+                   new_send_verif_mail)
 from .helpers import Helpers, str_to_bool
 
 avt_api = Blueprint('avt_api', __name__, url_prefix='/api/avatar')
@@ -483,7 +484,7 @@ def download_blob(avatar_id=None, photo_name=None):
 
 
 @avt_api.route('/<int:avatar_id>/life-span', methods=['GET'])
-def fetch_remaining_life_span(avatar_id=None):
+def old_fetch_remaining_life_span(avatar_id=None):
     if avatar_id is None:
         return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
     avatar = _h.get_a_avatar(avatar_id)
@@ -516,6 +517,43 @@ def fetch_remaining_life_span(avatar_id=None):
     gap_date = datetime.datetime.today() - date_of_birth
     r_lifespan_day = full_lifespan_day - gap_date.days
     return ok(r_lifespan_day)
+
+
+@avt_api.route('/new/<int:avatar_id>/life-span', methods=['GET'])
+def new_fetch_remaining_life_span(avatar_id=None):
+    if avatar_id is None:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id)
+    if avatar is None:
+        return unauthorized(_e.USER_INVALID)
+    today = datetime.datetime.today()
+    curr_year = today.year
+    curr_month = today.month
+    start_date = "{0}-{1}-{2}".format(curr_year - 1, curr_month, 1)
+    # curr_year + 1 : Consider the time difference between countries.
+    end_date = "{0}-{1}-{2}".format(curr_year + 1, curr_month, today.day)
+    this_avg_score = _h.get_avg_score_between_dates(avatar_id, start_date,
+                                                    end_date)
+    if this_avg_score is None or this_avg_score.avg_score is None:
+        return unauthorized(_e.SCORE_NONE)
+
+    if avatar.date_of_birth is None:
+        return unauthorized(_e.BIRTH_NONE)
+    avg_score = format(this_avg_score.avg_score, '.2f')
+    str_score = avg_score.split('.')[0] + avg_score.split('.')[1]
+    full_lifespan_day = _h.get_remaining_life_span(int(str_score))
+    full_lifespan_day = int(format(full_lifespan_day, '.0f'))
+
+    # It's logging the full_lifespan_day into avatar table for ranking
+    _h.update_avatar_info(avatar, AvatarInfo.full_lifespan, full_lifespan_day)
+
+    date_of_birth = datetime.datetime(avatar.date_of_birth.year,
+                                      avatar.date_of_birth.month,
+                                      avatar.date_of_birth.day)
+    gap_date = datetime.datetime.today() - date_of_birth
+    r_lifespan_day = full_lifespan_day - gap_date.days
+    return ok(dict(r_lifespan_day=r_lifespan_day,
+                   avg_score=avg_score))
 
 
 @avt_api.route('/ranking/<int:age_range>/<int:starting>/<int:page>',
@@ -574,7 +612,7 @@ def auth_old_avatar():
 
 
 @avt_api.route('/create', methods=['POST'])
-def create_new_avatar():
+def old_create_new_avatar():
     result = validate_schema(request.get_json(), _s.create_avatar)
     if not result['ok']:
         return bad_req(result['message'])
@@ -586,6 +624,22 @@ def create_new_avatar():
     avatar_js = _h.convert_a_avatar_into_js(avatar)
     auth = dict(avatar=avatar_js, language_id=data['language_id'])
     send_conf_mail(avatar.email)
+    return ok(auth)
+
+
+@avt_api.route('/new/create', methods=['POST'])
+def new_create_new_avatar():
+    result = validate_schema(request.get_json(), _s.create_avatar)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    if _h.is_email_duplicated(data['email']):
+        return unauthorized(_e.MAIL_DUP)
+    avatar = _h.create_a_new_avatar(data)
+    _h.create_def_profile_tags(avatar.id, data['language_id'])
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
+    new_send_conf_mail(avatar.email, data['language_id'])
     return ok(auth)
 
 
@@ -643,7 +697,7 @@ def refresh_access_token():
 
 
 @avt_api.route('/email/<string:option>', methods=['POST'])
-def find_old_email(option=None):
+def old_find_old_email(option=None):
     result = validate_schema(request.get_json(), _s.avatar_email)
     if not result['ok']:
         return unauthorized(_e.CODE_INVALID)
@@ -659,6 +713,33 @@ def find_old_email(option=None):
             return unauthorized(_e.MAIL_INVALID)
     if option == 'verify':
         send_verif_mail(email)
+        return ok()
+    elif option == 'code':
+        if email == verify_mail_code(data['code']):
+            return ok()
+        else:
+            return unauthorized(_e.CODE_INVALID)
+    else:
+        return bad_req(_m.EMPTY_PARAM.format('option'))
+
+
+@avt_api.route('/new/email/<string:option>', methods=['POST'])
+def new_find_old_email(option=None):
+    result = validate_schema(request.get_json(), _s.new_avatar_email)
+    if not result['ok']:
+        return unauthorized(_e.CODE_INVALID)
+    data = result['data']
+    try:
+        email = data['email']
+    except KeyError:
+        return unauthorized(_e.CODE_INVALID)
+    if option == 'find':
+        if _h.is_email_duplicated(email):
+            return ok()
+        else:
+            return unauthorized(_e.MAIL_INVALID)
+    if option == 'verify':
+        new_send_verif_mail(email, data['language_id'])
         return ok()
     elif option == 'code':
         if email == verify_mail_code(data['code']):
@@ -754,7 +835,7 @@ def new_post_new_log():
 
 @mail_api.route('/conf-link', methods=['POST'])
 @jwt_required
-def send_mail_confirm_link_again():
+def old_send_mail_confirm_link_again():
     result = validate_schema(request.get_json(), _s.mail_conf_link)
     if not result['ok']:
         return bad_req(result['message'])
@@ -767,6 +848,25 @@ def send_mail_confirm_link_again():
     if not avatar:
         return forbidden(_e.USER_INVALID)
     send_conf_mail(avatar.email)
+    return ok()
+
+
+@mail_api.route('/new/conf-link', methods=['POST'])
+@jwt_required
+def new_send_mail_confirm_link_again():
+    result = validate_schema(request.get_json(), _s.mail_conf_link)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    try:
+        avatar_id = data['avatar_id']
+    except KeyError:
+        return bad_req(_m.EMPTY_PARAM.format('avatar_id'))
+    avatar = _h.get_a_avatar(avatar_id=avatar_id)
+    if not avatar:
+        return forbidden(_e.USER_INVALID)
+    lang_tag = _h.get_a_lang_profile_tag(avatar_id)
+    new_send_conf_mail(avatar.email, lang_tag.sub_tag.id)
     return ok()
 
 

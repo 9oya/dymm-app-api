@@ -5,7 +5,7 @@ from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 
 from dymm_api import app, mail
-from .patterns import URIPattern
+from .patterns import URIPattern, TagId
 
 _u = URIPattern()
 
@@ -47,6 +47,20 @@ def send_conf_mail(mail_address):
     mail.send(message)
 
 
+def new_send_conf_mail(mail_address, lang_id):
+    message = Message()
+    message.add_recipient(mail_address)
+    mail_token = generate_confirmation_token(mail_address)
+    uri = _u.HOST + '/api/mail/conf/' + mail_token
+    message.html = render_template('new_mail_conf_msg.html', lang_id=lang_id,
+                                   uri=uri)
+    if lang_id == TagId.kor:
+        message.subject = "딤Dymm 이메일 주소를 확인해주세요."
+    else:
+        message.subject = "Verify your Dymm email address."
+    mail.send(message)
+
+
 def send_verif_mail(mail_address):
     message = Message()
     message.add_recipient(mail_address)
@@ -55,6 +69,21 @@ def send_verif_mail(mail_address):
                                    mail_address=mail_address,
                                    verif_code=verif_code.upper())
     message.subject = "Dymm Account Verification"
+    mail.send(message)
+
+
+def new_send_verif_mail(mail_address, lang_id):
+    message = Message()
+    message.add_recipient(mail_address)
+    verif_code = generate_verification_code(mail_address)
+    message.html = render_template('new_mail_verification.html',
+                                   lang_id=lang_id,
+                                   mail_address=mail_address,
+                                   verif_code=verif_code.upper())
+    if lang_id == TagId.kor:
+        message.subject = "딤Dymm 계정 검증"
+    else:
+        message.subject = "Dymm Account Verification"
     mail.send(message)
 
 

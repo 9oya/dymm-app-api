@@ -129,6 +129,25 @@ class Schema:
         "required": ["email"],
         "additionalProperties": False
     }
+    new_avatar_email = {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "code": {
+                "type": "string",
+                "minLength": 6,
+                "maxLength": 6
+            },
+            "language_id": {
+                "type": "integer"
+            }
+        },
+        "required": ["email"],
+        "additionalProperties": False
+    }
     update_avatar = {
         "type": "object",
         "properties": {

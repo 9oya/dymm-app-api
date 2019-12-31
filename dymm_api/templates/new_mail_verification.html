@@ -1,0 +1,37 @@
+{% if lang_id == 35 %}
+    <span style="font-size:24px;color:lightseagreen;font-family:Arial,Helvetica,sans-serif;font-weight:bold">안녕하세요 {{ mail_address }}</span>
+    <div style="padding-top:12px;font-size:17px;color:mediumslateblue;font-family:Arial,Helvetica,sans-serif;font-weight:bold">
+        딤Dymm 로그인을 변경하는 데 필요한 코드는 다음과 같습니다.<br/>
+        credentials:
+    </div>
+    <br/><br/>
+    <span style="font-size:24px;color:lightseagreen;font-family:Arial,Helvetica,sans-serif;font-weight:bold">{{ verif_code }}</span>
+    <br><br><br>
+    <div style="padding:20px;font-size:12px;line-height:17px;color:darkgray;font-family:Arial,Helvetica,sans-serif">
+        딤Dymm 로그인 자격 증명을 변경하지 않으려면이 이메일을 무시하십시오.<br>
+        다른 사용자가 자신의 로그인 정보를 잘못 입력했을 수 있습니다.
+    </div>
+    <br/>
+    <div style="font-size:12px;color:mediumslateblue;padding-top:16px;padding-bottom:60px">
+        Dymm ©<br/>
+        <a href="https://dymm.io/" style="color:#8f98a0">https://dymm.io/</a>
+    </div>
+{% else %}
+    <span style="font-size:24px;color:lightseagreen;font-family:Arial,Helvetica,sans-serif;font-weight:bold">Hello {{ mail_address }}</span>
+    <div style="padding-top:12px;font-size:17px;color:mediumslateblue;font-family:Arial,Helvetica,sans-serif;font-weight:bold">
+        Here is the code you need to change your Dymm login<br/>
+        credentials:
+    </div>
+    <br/><br/>
+    <span style="font-size:24px;color:lightseagreen;font-family:Arial,Helvetica,sans-serif;font-weight:bold">{{ verif_code }}</span>
+    <br><br><br>
+    <div style="padding:20px;font-size:12px;line-height:17px;color:darkgray;font-family:Arial,Helvetica,sans-serif">
+        If you are not trying to change your Dymm login credentials, please ignore this<br/>
+        email. It is possible that another user entered their login information incorrectly.
+    </div>
+    <br/>
+    <div style="font-size:12px;color:mediumslateblue;padding-top:16px;padding-bottom:60px">
+        Dymm ©<br/>
+        <a href="https://dymm.io/" style="color:#8f98a0">https://dymm.io/</a>
+    </div>
+{% endif %}
