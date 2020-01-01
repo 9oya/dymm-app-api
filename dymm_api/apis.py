@@ -649,7 +649,7 @@ def sign_with_facebook():
     data = result['data']
     try:
         dup_avatar = _h.is_email_duplicated(data['fb_id'])
-        if dup_avatar is None:
+        if dup_avatar is False or dup_avatar is None:
             dup_avatar = _h.is_email_duplicated(data['email'])
         if dup_avatar:
             if dup_avatar.fb_id is None or dup_avatar.fb_id <= 0:
