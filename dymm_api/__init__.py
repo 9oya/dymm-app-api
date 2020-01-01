@@ -8,8 +8,8 @@ from .blueprint import register_blueprint
 from .custom_jwt import customize_jwt
 
 app = Flask('dymm_api')
-# app.config.from_object('dymm_api.config.ProductionConfig')
-app.config.from_object('dymm_api.config.DevelopmentConfig')
+app.config.from_object('dymm_api.config.ProductionConfig')
+# app.config.from_object('dymm_api.config.DevelopmentConfig')
 
 db = SQLAlchemy(app)
 b_crypt = Bcrypt(app)

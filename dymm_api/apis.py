@@ -648,7 +648,9 @@ def sign_with_facebook():
         return bad_req(result['message'].message)
     data = result['data']
     try:
-        dup_avatar = _h.is_email_duplicated(data['email'])
+        dup_avatar = _h.is_email_duplicated(data['fb_id'])
+        if dup_avatar is None:
+            dup_avatar = _h.is_email_duplicated(data['email'])
         if dup_avatar:
             if dup_avatar.fb_id is None or dup_avatar.fb_id <= 0:
                 _h.update_avatar_info(dup_avatar, int(AvatarInfo.fb_id),
