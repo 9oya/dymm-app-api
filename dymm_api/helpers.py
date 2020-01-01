@@ -635,7 +635,7 @@ class Helpers(object):
             LogGroup.note != None,
             LogGroup.is_active == True
         ).order_by(
-            LogGroup.year_number,
+            LogGroup.year_number.desc(),
             LogGroup.day_of_year.desc(),
             LogGroup.group_type.desc()
         ).paginate(page, per_page, False).items
