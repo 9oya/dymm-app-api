@@ -73,6 +73,7 @@ class TagClass:
     drug_pd_us = 8
     drug_pd_kr = 9
     supp = 10
+    drug_other = 11
 
 
 class TagId:

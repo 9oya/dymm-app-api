@@ -402,6 +402,7 @@ class Helpers(object):
                     or_(Tag.class1 == TagClass.drug_abc,
                         Tag.class1 == TagClass.drug_pd_us,
                         Tag.class1 == TagClass.drug_pd_kr,
+                        Tag.class1 == TagClass.drug_other,
                         Tag.class1 == TagClass.supp),
                     Tag.division1 != 0,
                     Tag.division2 != 0,
