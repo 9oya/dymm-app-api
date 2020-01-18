@@ -93,6 +93,10 @@ class TagId:
     password = 14642
     theme = 14645
     light = 14646
+    apple = 14647
+    walking = 355
+    aspirin = 11982
+    cold = 2464
 
 
 class BookmarkSuperTag:
@@ -120,3 +124,23 @@ class AvatarType:
     email = 1
     facebook = 2
     google = 3
+
+
+class LogGroupType:
+    morning = 1
+    daytime = 2
+    evening = 3
+    nighttime = 4
+
+
+class LanguageId:
+    eng = 30
+    kor = 35
+
+
+class EngText:
+    welcome = "Welcome to Dymm. Keep track of your condition."
+
+
+class KorText:
+    welcome = "딤에 오신걸 환영합니다. 생활을 기록하세요."

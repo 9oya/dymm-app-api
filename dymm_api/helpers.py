@@ -6,7 +6,8 @@ from sqlalchemy import text, func, and_, or_
 
 from dymm_api import b_crypt, db
 from .patterns import (URIPattern, TagType, TagClass, AvatarInfo, CondLogType,
-                       BookmarkSuperTag, RegExPattern, TagId, AvatarType)
+                       BookmarkSuperTag, RegExPattern, TagId, AvatarType,
+                       LogGroupType)
 from .models import (Avatar, AvatarCond, Banner, Bookmark, LogGroup, LogHistory,
                      ProfileTag, Tag, TagLog, TagSet)
 
@@ -1350,6 +1351,38 @@ class Helpers(object):
             is_active=True,
             x_val=data['x_val'],
             y_val=data['y_val']
+        )
+        db_session.add(new_tag_log)
+        db_session.commit()
+
+    @staticmethod
+    def create_a_initial_log_group(avatar_id, data):
+        new_log_group = LogGroup(
+            avatar_id=avatar_id,
+            group_type=data['group_type'],
+            year_number=data['year_number'],
+            year_forweekofyear=data['year_forweekofyear'],
+            month_number=data['month_number'],
+            week_of_year=data['week_of_year'],
+            day_of_year=data['day_of_year'],
+            log_date=data['log_date'],
+            is_active=True,
+            food_cnt=1,
+            act_cnt=1,
+            drug_cnt=1,
+        )
+        db_session.add(new_log_group)
+        db_session.commit()
+        return new_log_group
+
+    @staticmethod
+    def create_initial_group_of_logs(log_group_id, tag_id, x_val, y_val):
+        new_tag_log = TagLog(
+            group_id=log_group_id,
+            tag_id=tag_id,
+            is_active=True,
+            x_val=x_val,
+            y_val=y_val
         )
         db_session.add(new_tag_log)
         db_session.commit()

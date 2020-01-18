@@ -10,7 +10,8 @@ from inapppy import AppStoreValidator, InAppPyValidationError
 from dymm_api import b_crypt
 from .errors import ok, forbidden, bad_req, unauthorized
 from .patterns import (MsgPattern, RegExPattern, ErrorPattern, TagType,
-                       BookmarkSuperTag, TagClass, TagId, AvatarInfo, AvatarType)
+                       BookmarkSuperTag, TagClass, TagId, AvatarInfo, AvatarType,
+                       LanguageId, EngText, KorText)
 from .schemas import Schema, validate_schema
 from .mail import (confirm_mail_token, send_conf_mail, send_verif_mail,
                    verify_mail_code, send_opinion_mail, new_send_conf_mail,
@@ -641,6 +642,30 @@ def new_create_new_avatar():
     return ok(auth)
 
 
+@avt_api.route('/new2/create', methods=['POST'])
+def new2_create_new_avatar():
+    result = validate_schema(request.get_json(), _s.new2_create_avatar)
+    if not result['ok']:
+        return bad_req(result['message'])
+    data = result['data']
+    if _h.is_email_duplicated(data['email']):
+        return unauthorized(_e.MAIL_DUP)
+    avatar = _h.create_a_new_avatar(data)
+    _h.create_def_profile_tags(avatar.id, data['language_id'])
+    new_log_group = _h.create_a_initial_log_group(avatar.id, data)
+    if data['language_id'] == LanguageId.eng:
+        _h.update_log_group_note(new_log_group, EngText.welcome)
+    elif data['language_id'] == LanguageId.kor:
+        _h.update_log_group_note(new_log_group, KorText.welcome)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.apple, 1, 0)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.walking, 0, 25)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.aspirin, 1, 0)
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
+    new_send_conf_mail(avatar.email, data['language_id'])
+    return ok(auth)
+
+
 @avt_api.route('/fb-auth', methods=['POST'])
 def sign_with_facebook():
     result = validate_schema(request.get_json(), _s.fb_login)
@@ -667,6 +692,42 @@ def sign_with_facebook():
     return ok(auth)
 
 
+@avt_api.route('/fb-auth2', methods=['POST'])
+def sign_with_facebook_v2():
+    result = validate_schema(request.get_json(), _s.fb_login_v2)
+    if not result['ok']:
+        return bad_req(result['message'].message)
+    data = result['data']
+    try:
+        dup_avatar = _h.is_email_duplicated(data['fb_id'])
+        if dup_avatar is False or dup_avatar is None:
+            dup_avatar = _h.is_email_duplicated(data['email'])
+        if dup_avatar:
+            if dup_avatar.fb_id is None or dup_avatar.fb_id <= 0:
+                _h.update_avatar_info(dup_avatar, int(AvatarInfo.fb_id),
+                                      data['fb_id'])
+            avatar_js = _h.convert_a_avatar_into_js(dup_avatar)
+            auth = dict(avatar=avatar_js, language_id=data['language_id'])
+            return ok(auth)
+    except KeyError:
+        data['email'] = data['fd_id']
+    avatar = _h.create_a_fb_avatar(data)
+    _h.create_def_profile_tags(avatar.id, data['language_id'])
+
+    new_log_group = _h.create_a_initial_log_group(avatar.id, data)
+    if data['language_id'] == LanguageId.eng:
+        _h.update_log_group_note(new_log_group, EngText.welcome)
+    elif data['language_id'] == LanguageId.kor:
+        _h.update_log_group_note(new_log_group, KorText.welcome)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.apple, 1, 0)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.walking, 0, 25)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.aspirin, 1, 0)
+
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
+    return ok(auth)
+
+
 @avt_api.route('/g-auth', methods=['POST'])
 def sign_with_google():
     result = validate_schema(request.get_json(), _s.g_login)
@@ -683,6 +744,37 @@ def sign_with_google():
         return ok(auth)
     avatar = _h.create_a_google_avatar(data)
     _h.create_def_profile_tags(avatar.id, data['language_id'])
+    avatar_js = _h.convert_a_avatar_into_js(avatar)
+    auth = dict(avatar=avatar_js, language_id=data['language_id'])
+    return ok(auth)
+
+
+@avt_api.route('/g-auth2', methods=['POST'])
+def sign_with_google_v2():
+    result = validate_schema(request.get_json(), _s.g_login_v2)
+    if not result['ok']:
+        return bad_req(result['message'].message)
+    data = result['data']
+    dup_avatar = _h.is_email_duplicated(data['email'])
+    if dup_avatar:
+        if dup_avatar.avatar_type is None:
+            _h.update_avatar_info(dup_avatar, int(AvatarInfo.avatar_type),
+                                  AvatarType.google)
+        avatar_js = _h.convert_a_avatar_into_js(dup_avatar)
+        auth = dict(avatar=avatar_js, language_id=data['language_id'])
+        return ok(auth)
+    avatar = _h.create_a_google_avatar(data)
+    _h.create_def_profile_tags(avatar.id, data['language_id'])
+
+    new_log_group = _h.create_a_initial_log_group(avatar.id, data)
+    if data['language_id'] == LanguageId.eng:
+        _h.update_log_group_note(new_log_group, EngText.welcome)
+    elif data['language_id'] == LanguageId.kor:
+        _h.update_log_group_note(new_log_group, KorText.welcome)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.apple, 1, 0)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.walking, 0, 25)
+    _h.create_initial_group_of_logs(new_log_group.id, TagId.aspirin, 1, 0)
+
     avatar_js = _h.convert_a_avatar_into_js(avatar)
     auth = dict(avatar=avatar_js, language_id=data['language_id'])
     return ok(auth)

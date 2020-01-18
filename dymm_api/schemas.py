@@ -62,6 +62,66 @@ class Schema:
                      "language_id"],
         "additionalProperties": False
     }
+    new2_create_avatar = {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "password": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 40
+            },
+            "first_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "last_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "language_id": {
+                "type": "integer"
+            },
+            "year_number": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "year_forweekofyear": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "month_number": {
+                "type": "integer",
+                "pattern": "[1-12]"
+            },
+            "week_of_year": {
+                "type": "integer",
+                "pattern": "[1-54]"
+            },
+            "day_of_year": {
+                "type": "integer",
+                "pattern": "[1-365]"
+            },
+            "group_type": {
+                "type": "integer",
+                "pattern": "[1-4]"
+            },
+            "log_date": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 10,
+                "pattern": "^\d{4}\-\d{1,2}\-\d{1,2}$"
+            }
+        },
+        "required": ["email", "password", "first_name", "last_name",
+                     "language_id"],
+        "additionalProperties": False
+    }
     fb_login = {
         "type": "object",
         "properties": {
@@ -89,6 +149,63 @@ class Schema:
         "required": ["fb_id", "first_name", "last_name", "language_id"],
         "additionalProperties": False
     }
+    fb_login_v2 = {
+        "type": "object",
+        "properties": {
+            "fb_id": {
+                "type": "string"
+            },
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "first_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "last_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "language_id": {
+                "type": "integer"
+            },
+            "year_number": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "year_forweekofyear": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "month_number": {
+                "type": "integer",
+                "pattern": "[1-12]"
+            },
+            "week_of_year": {
+                "type": "integer",
+                "pattern": "[1-54]"
+            },
+            "day_of_year": {
+                "type": "integer",
+                "pattern": "[1-365]"
+            },
+            "group_type": {
+                "type": "integer",
+                "pattern": "[1-4]"
+            },
+            "log_date": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 10,
+                "pattern": "^\d{4}\-\d{1,2}\-\d{1,2}$"
+            }
+        },
+        "required": ["fb_id", "first_name", "last_name", "language_id"],
+        "additionalProperties": False
+    }
     g_login = {
         "type": "object",
         "properties": {
@@ -108,6 +225,60 @@ class Schema:
             },
             "language_id": {
                 "type": "integer"
+            }
+        },
+        "required": ["email", "first_name", "last_name", "language_id"],
+        "additionalProperties": False
+    }
+    g_login_v2 = {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "first_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "last_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+            },
+            "language_id": {
+                "type": "integer"
+            },
+            "year_number": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "year_forweekofyear": {
+                "type": "integer",
+                "pattern": "[1-2][0-9][0-9][0-9]"
+            },
+            "month_number": {
+                "type": "integer",
+                "pattern": "[1-12]"
+            },
+            "week_of_year": {
+                "type": "integer",
+                "pattern": "[1-54]"
+            },
+            "day_of_year": {
+                "type": "integer",
+                "pattern": "[1-365]"
+            },
+            "group_type": {
+                "type": "integer",
+                "pattern": "[1-4]"
+            },
+            "log_date": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 10,
+                "pattern": "^\d{4}\-\d{1,2}\-\d{1,2}$"
             }
         },
         "required": ["email", "first_name", "last_name", "language_id"],
