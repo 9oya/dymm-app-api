@@ -1,11 +1,10 @@
 runtime: python37
 
 env_variables:
-  CLOUD_STORAGE_BUCKET: dymm-api-01.appspot.com
+  CLOUD_STORAGE_BUCKET: <CLOUD-STORAGE-BUCKET>
   # Replace user, password, database, and instance connection name with the values obtained
   # when configuring your Cloud SQL instance.
-  SQLALCHEMY_DATABASE_URI: >-
-    postgresql+psycopg2://postgres:yBm292tLOzi3j6KF@/dymm_db1?host=/cloudsql/dymm-api-01:us-central1:dymm-postgres-instance1
+  SQLALCHEMY_DATABASE_URI: <SQLALCHEMY-DATABASE-URI>
 
 handlers:
 - url: /.*
